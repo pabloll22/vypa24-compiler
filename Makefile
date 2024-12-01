@@ -1,18 +1,48 @@
-vypcomp: parser.o lexer.o main.o
-        gcc -o vypcomp parser.o lexer.o main.o -lfl
+# Compilador y opciones
+CC = gcc
+CFLAGS = -Wall -Wextra -g
 
-parser.o: src/parser.c
-        gcc -c -o parser.o src/parser.c
+# Archivos principales
+EXEC = vypcomp
+SRC = src
+LEXER_SRC = $(SRC)/lexer.l
+PARSER_SRC = $(SRC)/parser.y
+MAIN_SRC = $(SRC)/main.c
+AST_SRC = $(SRC)/ast.c
 
-lexer.o: src/lexer.l src/parser.h
-        flex -o src/lexer.c src/lexer.l
-        gcc -c -o lexer.o src/lexer.c
+# Archivos generados
+LEXER_GEN = $(SRC)/lexer.c
+PARSER_GEN = $(SRC)/parser.c
+PARSER_HEADER = $(SRC)/parser.h
 
-src/parser.c src/parser.h: src/parser.y
-        bison -d -o src/parser.c src/parser.y
+# Objetos
+OBJS = parser.o lexer.o main.o ast.o
 
-main.o: src/main.c
-        gcc -c -o main.o src/main.c
+# Regla principal
+$(EXEC): $(OBJS)
+        $(CC) $(CFLAGS) -o $(EXEC) $(OBJS) -lfl
 
+# Objeto para el parser
+parser.o: $(PARSER_GEN) $(PARSER_HEADER) $(SRC)/ast.h
+        $(CC) $(CFLAGS) -c -o parser.o $(PARSER_GEN)
+
+# Objeto para el lexer
+lexer.o: $(LEXER_GEN) $(PARSER_HEADER) $(SRC)/ast.h
+        flex -o $(LEXER_GEN) $(LEXER_SRC)
+        $(CC) $(CFLAGS) -c -o lexer.o $(LEXER_GEN)
+
+# Objeto para el archivo principal
+main.o: $(MAIN_SRC) $(SRC)/ast.h
+        $(CC) $(CFLAGS) -c -o main.o $(MAIN_SRC)
+
+# Objeto para el AST
+ast.o: $(AST_SRC) $(SRC)/ast.h
+        $(CC) $(CFLAGS) -c -o ast.o $(AST_SRC)
+
+# Generación del parser
+$(PARSER_GEN) $(PARSER_HEADER): $(PARSER_SRC)
+        bison -d -o $(PARSER_GEN) $(PARSER_SRC)
+
+# Limpieza
 clean:
-        rm -f vypcomp src/parser.c src/parser.h src/lexer.c parser.o lexer.o main.o
+        rm -f $(EXEC) $(LEXER_GEN) $(PARSER_GEN) $(PARSER_HEADER) $(OBJS)
