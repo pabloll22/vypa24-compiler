@@ -1,17 +1,22 @@
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  %{
+%{
+#include "ast.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "ast.h"
 #define YYDEBUG 1
+
 extern int yydebug;
 extern int yylex();
+extern char* yytext;
+
 void yyerror(const char* msg);
+extern ASTNode* root;
+
 %}
 
 %union {
     int ival;
     char* sval;
-//    ASTNode* astNode;
+    ASTNode* astNode;
 }
 
 %token <sval> CLASS INT STRING VOID IDENTIFIER STRING_LITERAL
@@ -21,18 +26,41 @@ void yyerror(const char* msg);
 %token SUPER NEW THIS
 %token '.'
 
+%type <sval> type simple_type user_type
+
 %left '.'
 %left '+' '-'
 %left '*' '/'
 %nonassoc '<' '>' LE GE EQ NE
 
+%type <astNode> program
+%type <astNode>  class_definitions
+%type <astNode> class_body
+%type <astNode> class_member
+%type <astNode> function_definitions
+%type <astNode> class_definition
+%type <astNode> function_definition
+%type <astNode> declaration
+%type <astNode> block
+%type <astNode> parameter_list
+//%type <astNode> type
+%type <astNode> expression
+%type <astNode> statement
+%type <astNode> IDENTIFIER_LIST
+
 %%
 
 // Gramática principal
 program:
-    class_definitions
-    | function_definitions
-    | class_definitions function_definitions
+    class_definitions {
+        root = (ASTNode*)createProgramNode($1, NULL);
+    }
+    | function_definitions {
+        root = (ASTNode*)createProgramNode(NULL, $1);
+    }
+    | class_definitions function_definitions {
+        root = (ASTNode*)createProgramNode($1, $2);
+    }
 ;
 
 class_definitions:
@@ -41,31 +69,46 @@ class_definitions:
 ;
 
 class_definition:
-    CLASS IDENTIFIER ':' IDENTIFIER '{' class_body '}'
-        { printf("Class %s inherits from %s\n", $2, $4); }
-    | CLASS IDENTIFIER '{' class_body '}'
-        { printf("Class %s with no inheritance\n", $2); }
+    CLASS IDENTIFIER ':' IDENTIFIER '{' class_body '}' {
+        $$ = (ASTNode*)createClassNode($2, $4, $6);  // Crear nodo de clase
+    }
+    | CLASS IDENTIFIER '{' class_body '}' {
+        $$ = (ASTNode*)createClassNode($2, NULL, $4);  // Sin herencia
+    }
 ;
 
 class_body:
-    /* vacío */
-    | class_body class_member
+    /* vacío */{
+        $$ = NULL;
+    }
+    | class_body class_member {
+        $$ = (ASTNode*)appendNode($1, $2);  // Agregar el nuevo miembro al cuerpo de la clase
+    }
 ;
 
 class_member:
-    declaration
-    | function_definition
+    declaration {
+        $$ = $1;  // El miembro es una declaración
+    }
+    | function_definition {
+        $$ = $1;  // El miembro es una función
+    }
 ;
 
 function_definitions:
-    function_definitions function_definition
-    | function_definition
+    function_definitions function_definition {
+        $$ = (ASTNode*)appendNode($1, $2);  // Combina la lista de funciones con una nueva función
+    }
+    | function_definition {
+        $$ = $1;  // La lista inicial es simplemente el primer nodo
+    }
 ;
 
 function_definition:
-    type IDENTIFIER '(' parameter_list ')' block
+    type IDENTIFIER '(' parameter_list ')' block {
+        $$ = (ASTNode*)createFunctionNode($1, $2, $4, $6);  // Crear nodo de función
+    }
 ;
-
 parameter_list:
     /* vacío */
     |VOID
@@ -83,9 +126,18 @@ parameter_declaration:
 
 // Declaraciones
 declaration:
-    type IDENTIFIER ';'
-    | type IDENTIFIER '=' expression ';'
-    | type IDENTIFIER ',' IDENTIFIER_LIST ';'
+    type IDENTIFIER ';' {
+        printf("Creating declaration: type=%s, name=%s\n", $1, $2);
+        $$ = (ASTNode*)createDeclarationNode($1, $2, NULL);  // Declaración sin inicialización
+    }
+    | type IDENTIFIER '=' expression ';' {
+        printf("Creating declaration with initialization: type=%s, name=%s\n", $1, $2);
+        $$ = (ASTNode*)createDeclarationNode($1, $2, $4);  // Declaración con inicialización
+    }
+    | type IDENTIFIER ',' IDENTIFIER_LIST ';' {
+        printf("Creating declaration list: type=%s, name=%s\n", $1, $2);
+        $$ = (ASTNode*)createDeclarationListNode($2, $4);  // Múltiples declaraciones
+    }
 ;
 
 IDENTIFIER_LIST:
@@ -94,16 +146,33 @@ IDENTIFIER_LIST:
 ;
 
 type:
-    simple_type
-    |user_type
+    simple_type {
+        printf("Parsed simple_type: %s\n", $1);
+        $$ = $1; // Pasar directamente el valor del tipo
+    }
+    | user_type {
+        printf("Parsed user_type: %s\n", $1);
+        $$ = $1; // Pasar el nombre del tipo de usuario
+    }
+;
 
 simple_type:
-    INT
-    | STRING
-    | VOID
+    INT {
+        $$ = $1; // "int", "string" o "void" ya están definidos en el lexer
+    }
+    | STRING {
+        $$ = $1;
+    }
+    | VOID {
+        $$ = $1;
+    }
+;
 
 user_type:
-    IDENTIFIER;
+    IDENTIFIER {
+        $$ = $1; // El identificador de la clase o tipo definido por el usuario
+    }
+;
 
 
 // Bloques de código
@@ -129,8 +198,12 @@ statement:
     | WHILE '(' expression ')' block
     | RETURN expression ';'
     | PRINT '(' print_arguments ')' ';'
-    | IDENTIFIER '=' expression ';'
-    | block
+    | IDENTIFIER '=' expression ';' {
+        $$ = (ASTNode*)createBinaryOpNode(OP_ASSIGN,$1, $3);  // Crear nodo de asignación
+    }
+    | block {
+        $$ = $1;  // El bloque es una lista de sentencias
+    }
     | ';'
 ;
 
@@ -142,7 +215,9 @@ print_arguments:
 ;
 
 expression:
-  INTEGER_LITERAL
+  INTEGER_LITERAL{
+        $$ = (ASTNode*)createLiteralNode(yytext, "int"); // Crear nodo de literal entero
+  }
   | STRING_LITERAL
   | IDENTIFIER
   | expression '.' IDENTIFIER  /* Acceso a atributo o método */
@@ -184,3 +259,8 @@ argument_list:
 void yyerror(const char* msg) {
     fprintf(stderr, "Error: %s\n", msg);
 }
+
+
+
+
+
