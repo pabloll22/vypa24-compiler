@@ -37,10 +37,9 @@ ASTFunctionNode* createFunctionNode(const char* name, const char* returnType, AS
         exit(EXIT_FAILURE);
     }
     node->base.type = AST_FUNCTION; // Asigna el tipo de nodo
-    node->base.next = NULL;         // Sin siguiente nodo
     node->name = strdup(name);      // Copia el nombre de la función
     node->returnType = strdup(returnType); // Copia el tipo de retorno
-    node->parameters = parameters; // Lista de parámetros
+    node->parameters = parameters ? parameters : NULL; // Lista de parámetros
     node->body = body;             // Cuerpo de la función
     return node;
 }
@@ -108,7 +107,7 @@ ASTLiteralNode* createLiteralNode(const char* value, const char* type) {
     }
     node->base.type = AST_LITERAL;
     node->value = strdup(value);
-    node->type = strdup(type);
+    node->literalType = strdup(type);
     return node;
 }
 
@@ -136,3 +135,28 @@ ASTNode* appendNode(ASTNode* list, ASTNode* node) {
     return list;
 }
 
+// Función para crear un nodo de bloque
+ASTBlockNode* createBlockNode(ASTNode* statements) {
+    ASTBlockNode* node = (ASTBlockNode*)malloc(sizeof(ASTBlockNode));
+    if (!node) {
+        fprintf(stderr, "Error: no se pudo asignar memoria para ASTBlockNode.\n");
+        exit(EXIT_FAILURE);
+    }
+    node->base.type = AST_BLOCK;   // Asigna el tipo de nodo como bloque
+    node->base.next = NULL;        // Inicializa el puntero 'next' a NULL
+    node->statements = statements; // Asigna la lista de sentencias o declaraciones
+    return node;
+}
+
+// Función para crear un nodo New
+ASTNewNode* createNewNode(const char* className, ASTNode* arguments) {
+    ASTNewNode* node = (ASTNewNode*)malloc(sizeof(ASTNewNode));
+    if (!node) {
+        fprintf(stderr, "Error: no se pudo asignar memoria para ASTNewNode.\n");
+        exit(EXIT_FAILURE);
+    }
+    node->base.type = AST_NEW;
+    node->className = strdup(className); // Copia del nombre de la clase
+    node->arguments = arguments;        // Lista de argumentos
+    return node;
+}

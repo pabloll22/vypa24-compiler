@@ -44,6 +44,7 @@ typedef enum {
     AST_BINARY_OP,  // Nodo para operadores binarios
     AST_UNARY_OP,   // Nodo para operadores unarios
     AST_CALL,
+    AST_NEW,
 } ASTNodeType;
 
 // Nodo genérico del AST
@@ -110,7 +111,7 @@ typedef struct {
 typedef struct {
     ASTNode base;  // Nodo base
     char* value;   // Valor literal (entero, cadena, etc.)
-    char* type;    // Tipo de literal (int, string, etc.)
+    char* literalType;    // Tipo de literal (int, string, etc.)
 } ASTLiteralNode;
 
 typedef struct {
@@ -124,6 +125,17 @@ typedef struct {
     ASTNode* arguments;   // Lista de argumentos
 } ASTCallNode;
 
+// Nodo para el bloque
+typedef struct ASTBlockNode {
+    ASTNode base;            // Nodo base
+    ASTNode* statements;     // Lista de declaraciones o sentencias en el bloque
+} ASTBlockNode;
+
+typedef struct ASTNewNode {
+    ASTNode base;         // Nodo base
+    char* className;      // Nombre de la clase que se está instanciando
+    ASTNode* arguments;   // Lista de argumentos del constructor (si existen)
+} ASTNewNode;
 
 // Funciones para crear nodos
 ASTProgramNode* createProgramNode(ASTNode* classes, ASTNode* functions);
@@ -132,15 +144,17 @@ ASTFunctionNode* createFunctionNode(const char* name, const char* returnType, AS
 ASTDeclarationNode* createDeclarationNode(const char* type, const char* name, ASTNode* init);
 ASTDeclarationListNode* createDeclarationListNode(ASTNode* declaration, ASTNode* rest);
 
-/*ASTAssignmentNode* createAssignmentNode(ASTNode* var, ASTNode* value);
+//ASTAssignmentNode* createAssignmentNode(ASTNode* var, ASTNode* value);
 ASTVariableNode* createVariableNode(const char* name);
-ASTLiteralNode* createLiteralNode(int value);
-*/
+//ASTLiteralNode* createLiteralNode(int value);
+
 ASTBinaryOpNode* createBinaryOpNode(BinaryOperator op, ASTNode* left, ASTNode* right);
 ASTUnaryOpNode* createUnaryOpNode(UnaryOperator op, ASTNode* operand);
 ASTLiteralNode* createLiteralNode(const char* value, const char* type);
 ASTVariableNode* createVariableNode(const char* name);
 ASTCallNode* createCallNode(const char* functionName, ASTNode* arguments);
 ASTNode* appendNode(ASTNode* list, ASTNode* node);
+ASTBlockNode* createBlockNode(ASTNode* statements);
+ASTNewNode* createNewNode(const char* className, ASTNode* arguments);
 
 #endif // AST_H
