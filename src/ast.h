@@ -50,6 +50,8 @@ typedef enum {
     AST_IDENTIFIER_LIST,
     AST_STRING_LITERAL,
     AST_SUPER,
+    AST_TYPE_CAST,
+    AST_THIS,
 } ASTNodeType;
 
 // Nodo genérico del AST
@@ -127,6 +129,7 @@ typedef struct {
 typedef struct ASTFunctionCallNode {
     ASTNode base;          // Nodo base
     char* functionName;    // Nombre de la función
+    ASTNode* context;
     ASTNode* arguments;    // Lista de argumentos de la función
 } ASTFunctionCallNode;
 
@@ -202,6 +205,16 @@ typedef struct ASTSuperNode {
     ASTNode base;          // Nodo base
 } ASTSuperNode;
 
+typedef struct ASTTypeCastNode {
+    ASTNode base;          // Nodo base
+    char* typeName;        // Tipo al que se está convirtiendo
+    ASTNode* expression;   // Expresión a la que se aplica la conversión
+} ASTTypeCastNode;
+
+typedef struct ASTThisNode {
+    ASTNode base; // Nodo base
+} ASTThisNode;
+
 // Funciones para crear nodos
 ASTProgramNode* createProgramNode(ASTNode* classes, ASTNode* functions);
 ASTClassNode* createClassNode(const char* name, const char* parent, ASTNode* members);
@@ -230,5 +243,8 @@ ASTMethodCallNode* createMethodCallNode(ASTNode* expression, const char* methodN
 ASTNode* createIdentifierListNode(ASTNode* first, ASTNode* second);
 ASTNode* createStringLiteralNode(const char* value);
 ASTNode* createSuperNode();
+ASTTypeCastNode* createTypeCastNode(const char* typeName, ASTNode* expression);
+ASTFunctionCallNode* createFunctionCallWithContextNode(ASTNode* context, ASTNode* arguments);
+ASTThisNode* createThisNode();
 
 #endif // AST_H

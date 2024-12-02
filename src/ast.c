@@ -293,3 +293,39 @@ ASTNode* createSuperNode() {
     node->base.type = AST_SUPER;
     return (ASTNode*)node;
 }
+
+//Cast tipo
+ASTTypeCastNode* createTypeCastNode(const char* typeName, ASTNode* expression) {
+    ASTTypeCastNode* node = (ASTTypeCastNode*)malloc(sizeof(ASTTypeCastNode));
+    if (!node) {
+        fprintf(stderr, "Error: no se pudo asignar memoria para ASTTypeCastNode.\n");
+        exit(EXIT_FAILURE);
+    }
+    node->base.type = AST_TYPE_CAST;
+    node->typeName = strdup(typeName);  // Copia el nombre del tipo
+    node->expression = expression;     // La expresión a convertir
+    return node;
+}
+
+ASTFunctionCallNode* createFunctionCallWithContextNode(ASTNode* context, ASTNode* arguments) {
+    ASTFunctionCallNode* node = (ASTFunctionCallNode*)malloc(sizeof(ASTFunctionCallNode));
+    if (!node) {
+        fprintf(stderr, "Error: no se pudo asignar memoria para ASTFunctionCallNode.\n");
+        exit(EXIT_FAILURE);
+    }
+    node->base.type = AST_FUNCTION_CALL;
+    node->context = context;     // Nodo antes del paréntesis (contexto)
+    node->functionName = NULL;   // Esto puede ser NULL si solo usamos contexto
+    node->arguments = arguments; // Lista de argumentos
+    return node;
+}
+
+ASTThisNode* createThisNode() {
+    ASTThisNode* node = (ASTThisNode*)malloc(sizeof(ASTThisNode));
+    if (!node) {
+        fprintf(stderr, "Error: no se pudo asignar memoria para ASTThisNode.\n");
+        exit(EXIT_FAILURE);
+    }
+    node->base.type = AST_THIS;  // Asegúrate de tener un tipo AST_THIS
+    return node;
+}

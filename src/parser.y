@@ -254,6 +254,12 @@ statement:
     | ';' {
         $$ = NULL; // Sentencia vacía
     }
+    |IDENTIFIER '.' IDENTIFIER '=' expression ';' {
+        printf("Parsing: %s.%s = ...\n", $1, $3);  // Depuración
+        $$ = (ASTNode*)createBinaryOpNode(OP_ASSIGN,
+                                           (ASTNode*)createMemberAccessNode(createVariableNode($1), $3),
+                                           $5);
+    }
 ;
 
 print_arguments:
@@ -294,6 +300,11 @@ expression:
         // Llamada a método
         $$ = (ASTNode*)createMethodCallNode($1, $3, $5);
   }
+  | IDENTIFIER '.' IDENTIFIER '=' expression ';' {
+    $$ = (ASTNode*)createBinaryOpNode(OP_ASSIGN,
+                                       (ASTNode*)createMemberAccessNode(createVariableNode($1), $3),
+                                       $5);
+  }
   | IDENTIFIER '.' IDENTIFIER /* Acceso a atributo */ {
         // Acceso a atributo
         $$ = (ASTNode*)createMemberAccessNode(createVariableNode($1), $3);
@@ -312,9 +323,15 @@ expression:
   | NEW IDENTIFIER  /* Instancia sin argumentos */ {
         $$ = (ASTNode*)createNewNode($2, NULL); // Nodo para 'new IDENTIFIER'
   }
-  | THIS '.' IDENTIFIER  /* Acceso a atributo/método de la clase */
-  | THIS '.' IDENTIFIER '(' argument_list ')'
-  | expression '(' argument_list ')'  /* Llamada a función */
+  | THIS '.' IDENTIFIER  /* Acceso a atributo/método de la clase */ {
+    $$ = (ASTNode*)createMemberAccessNode(createThisNode(), $3);  // Nodo para acceso a atributo/método desde 'this'
+  }
+  | THIS '.' IDENTIFIER '(' argument_list ')' {
+    $$ = (ASTNode*)createMethodCallNode(createThisNode(), $3, $5);  // Nodo para llamada a método desde 'this'
+  }
+  | expression '(' argument_list ')'  /* Llamada a función */ {
+      $$ = (ASTNode*)createFunctionCallWithContextNode($1, $3);  // Nodo con contexto
+  }
   | IDENTIFIER '(' argument_list ')'  /* Llamada a función */ {
         if (strcmp($1, "subStr") == 0) {
                 printf("Creating subStr function call\n");
@@ -333,7 +350,10 @@ expression:
   | '(' expression ')'  /* Expresión entre paréntesis */ {
         $$ = $2;  // Simplemente devolver la expresión dentro de los paréntesis
   }
-  | '(' type ')' expression  /* Conversión de tipo */
+  | '(' type ')' expression  /* Conversión de tipo */ {
+      printf("Creating type cast: (%s)\n", $2);
+        $$ = (ASTNode*)createTypeCastNode($2, $4);
+  }
   | expression '+' expression  {
         $$ = (ASTNode*)createBinaryOpNode(OP_ADD, $1, $3);  // Suma
   }

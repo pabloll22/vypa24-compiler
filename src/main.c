@@ -196,6 +196,16 @@ void printAST(ASTNode* node, int indent) {
             printf("String Literal Node: \"%s\"\n", stringLiteralNode->value);
             break;
         }
+        case AST_TYPE_CAST: {
+            ASTTypeCastNode* castNode = (ASTTypeCastNode*)node;
+            printf("Type Cast Node: (%s)\n", castNode->typeName);
+            printf("  Expression:\n");
+            printAST(castNode->expression, indent + 1);
+            break;
+        }
+        case AST_THIS:
+            printf("This Node\n");
+            break;
         default:
             printf("Unknown Node Type\n");
             break;
