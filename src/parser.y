@@ -10,6 +10,7 @@ extern char* yytext;
 
 void yyerror(const char* msg);
 extern ASTNode* root;
+ASTNode* root = NULL;
 
 %}
 
@@ -51,6 +52,7 @@ extern ASTNode* root;
 %type <astNode> parameter_declaration_list
 %type <astNode> parameter_declaration
 %type <astNode> argument_list
+%type <astNode> print_arguments
 
 %%
 
@@ -157,8 +159,14 @@ declaration:
 ;
 
 IDENTIFIER_LIST:
-    IDENTIFIER
-    | IDENTIFIER_LIST ',' IDENTIFIER
+    IDENTIFIER {
+        // Crear un nodo para el identificador y asignarlo a $$.
+        $$ = (ASTNode*)createVariableNode($1);
+    }
+    | IDENTIFIER_LIST ',' IDENTIFIER {
+        // Crear un nodo para la lista y agregar el nuevo identificador.
+        $$ = (ASTNode*)createIdentifierListNode($1, (ASTNode*)createVariableNode($3));
+    }
 ;
 
 type:
@@ -220,14 +228,23 @@ declaration_or_statement:
     }
 ;
 
-
 // Sentencias
 statement:
-    IF '(' expression ')' block ELSE block
-    | IF '(' expression ')' block
-    | WHILE '(' expression ')' block
-    | RETURN expression ';'
-    | PRINT '(' print_arguments ')' ';'
+    IF '(' expression ')' block ELSE block {
+        $$ = (ASTNode*)createIfNode($3, $5, $7);  // Crear nodo de 'if' con la condición y los bloques
+    }
+    | IF '(' expression ')' block {
+        $$ = (ASTNode*)createIfNode($3, $5, NULL);  // Crear nodo de 'if' sin bloque 'else'
+    }
+    | WHILE '(' expression ')' block {
+        $$ = (ASTNode*)createWhileNode($3, $5);  // Crear nodo de 'while' con la condición y el bloque
+    }
+    | RETURN expression ';' {
+        $$ = (ASTNode*)createReturnNode($2);  // Crear nodo de 'return' con la expresión
+    }
+    | PRINT '(' print_arguments ')' ';' {
+        $$ = (ASTNode*)createPrintNode($3);  // Crear nodo de 'print' con los argumentos
+    }
     | IDENTIFIER '=' expression ';' {
         $$ = (ASTNode*)createBinaryOpNode(OP_ASSIGN,createVariableNode($1), $3);  // Crear nodo de asignación
     }
@@ -240,10 +257,18 @@ statement:
 ;
 
 print_arguments:
-    STRING_LITERAL
-    | STRING_LITERAL ',' print_arguments
-    | expression
-    | expression ',' print_arguments
+    STRING_LITERAL {
+        $$ = (ASTNode*)createLiteralNode($1, "string");  // Crear nodo de literal de cadena
+    }
+    | expression {
+        $$ = $1;  // El argumento es una expresión
+    }
+    | print_arguments ',' STRING_LITERAL {
+        $$ = (ASTNode*)appendNode($1, (ASTNode*)createLiteralNode($3, "string"));  // Agregar literal a la lista de argumentos
+    }
+    | print_arguments ',' expression {
+        $$ = (ASTNode*)appendNode($1, $3);  // Agregar expresión a la lista de argumentos
+    }
 ;
 
 expression:
@@ -255,17 +280,32 @@ expression:
   }
   | STRING_LITERAL {
         printf("Creating string literal: %s\n", $1);
-        $$ = (ASTNode*)createLiteralNode($1, "string");
+        $$ = (ASTNode*)createStringLiteralNode($1);
   }
   | IDENTIFIER {
         printf("Creating variable node: %s\n", $1);
         $$ = (ASTNode*)createVariableNode($1);
   }
-  | expression '.' IDENTIFIER  /* Acceso a atributo o método */
-  | expression '.' IDENTIFIER '(' argument_list ')'  /* Llamada a método */
-  | IDENTIFIER '.' IDENTIFIER /* Acceso a atributo */
-  | IDENTIFIER '.' IDENTIFIER '(' argument_list ')'  /* Llamada a método */
-  | SUPER '.' IDENTIFIER '(' argument_list ')'  /* Llamada a método desde super */
+  | expression '.' IDENTIFIER  /* Acceso a atributo o método */ {
+        // Acceso a atributo o método
+        $$ = (ASTNode*)createMemberAccessNode($1, $3);
+  }
+  | expression '.' IDENTIFIER '(' argument_list ')'  /* Llamada a método */ {
+        // Llamada a método
+        $$ = (ASTNode*)createMethodCallNode($1, $3, $5);
+  }
+  | IDENTIFIER '.' IDENTIFIER /* Acceso a atributo */ {
+        // Acceso a atributo
+        $$ = (ASTNode*)createMemberAccessNode(createVariableNode($1), $3);
+  }
+  | IDENTIFIER '.' IDENTIFIER '(' argument_list ')'  /* Llamada a método */ {
+        // Llamada a método
+        $$ = (ASTNode*)createMethodCallNode(createVariableNode($1), $3, $5);
+  }
+  | SUPER '.' IDENTIFIER '(' argument_list ')'  /* Llamada a método desde super */ {
+        // Llamada a método desde super
+        $$ = (ASTNode*)createMethodCallNode(createSuperNode(), $3, $5);
+  }
   | NEW IDENTIFIER '(' argument_list ')'  /* Constructor */ {
         $$ = (ASTNode*)createNewNode($2, $4); // Nodo para 'new IDENTIFIER()'
   }
@@ -275,21 +315,58 @@ expression:
   | THIS '.' IDENTIFIER  /* Acceso a atributo/método de la clase */
   | THIS '.' IDENTIFIER '(' argument_list ')'
   | expression '(' argument_list ')'  /* Llamada a función */
-  | IDENTIFIER '(' argument_list ')'  /* Llamada a función */
-  | READ_INT '(' ')'  /* Leer entero */
-  | READ_STRING '(' ')'  /* Leer string */
-  | '(' expression ')'  /* Expresión entre paréntesis */
+  | IDENTIFIER '(' argument_list ')'  /* Llamada a función */ {
+        if (strcmp($1, "subStr") == 0) {
+                printf("Creating subStr function call\n");
+                $$ = createFunctionCallNode($1, $3);  // Llamada a subStr con sus argumentos
+        } else {
+                printf("Creating general function call\n");
+                $$ = (ASTNode*)createFunctionCallNode($1, $3);  // Llamada a función en general
+        }
+  }
+  | READ_INT '(' ')'  /* Leer entero */{
+        $$ = (ASTNode*)createFunctionCallNode("readInt", NULL);  // Crear nodo para la llamada a readInt()
+  }
+  | READ_STRING '(' ')'  /* Leer string */ {
+        $$ = createFunctionCallNode("readString", NULL); // Llamada a la función readString sin argumentos
+  }
+  | '(' expression ')'  /* Expresión entre paréntesis */ {
+        $$ = $2;  // Simplemente devolver la expresión dentro de los paréntesis
+  }
   | '(' type ')' expression  /* Conversión de tipo */
-  | expression '+' expression
-  | expression '-' expression
-  | expression '*' expression
-  | expression '/' expression
-  | expression '<' expression
-  | expression '>' expression
-  | expression LE expression
-  | expression GE expression
-  | expression EQ expression
-  | expression NE expression
+  | expression '+' expression  {
+        $$ = (ASTNode*)createBinaryOpNode(OP_ADD, $1, $3);  // Suma
+  }
+  | expression '-' expression  {
+        $$ = (ASTNode*)createBinaryOpNode(OP_SUB, $1, $3);  // Resta
+  }
+  | expression '*' expression  {
+        $$ = (ASTNode*)createBinaryOpNode(OP_MUL, $1, $3);  // Multiplicación
+  }
+  | expression '/' expression  {
+        $$ = (ASTNode*)createBinaryOpNode(OP_DIV, $1, $3);  // División
+  }
+  | expression '<' expression {
+        $$ = (ASTNode*)createBinaryOpNode(OP_LT, $1, $3);  // Menor que
+  }
+  | expression '>' expression {
+        $$ = (ASTNode*)createBinaryOpNode(OP_GT, $1, $3);  // Mayor que
+  }
+  | expression LE expression {
+        $$ = (ASTNode*)createBinaryOpNode(OP_LE, $1, $3);  // Menor o igual que
+  }
+  | expression GE expression {
+        $$ = (ASTNode*)createBinaryOpNode(OP_GE, $1, $3);  // Mayor o igual que
+  }
+  | expression EQ expression {
+        $$ = (ASTNode*)createBinaryOpNode(OP_EQ, $1, $3);  // Igual que
+  }
+  | expression NE expression {
+        $$ = (ASTNode*)createBinaryOpNode(OP_NE, $1, $3);  // Diferente que
+  }
+  /*| subStr(expression, expression, expression) {  // Regla para subStr
+        $$ = (ASTNode*)createFunctionCallNode("subStr", $3);
+  }*/
 ;
 
 argument_list:

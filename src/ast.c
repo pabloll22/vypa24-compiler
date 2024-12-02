@@ -160,3 +160,136 @@ ASTNewNode* createNewNode(const char* className, ASTNode* arguments) {
     node->arguments = arguments;        // Lista de argumentos
     return node;
 }
+
+// Función para crear el nodo de if
+ASTIfNode* createIfNode(ASTNode* condition, ASTNode* trueBlock, ASTNode* falseBlock) {
+    ASTIfNode* node = (ASTIfNode*)malloc(sizeof(ASTIfNode));
+    if (!node) {
+        fprintf(stderr, "Error: no se pudo asignar memoria para ASTIfNode.\n");
+        exit(EXIT_FAILURE);
+    }
+    node->base.type = AST_IF;
+    node->condition = condition;
+    node->trueBlock = trueBlock;
+    node->falseBlock = falseBlock;
+    return node;
+}
+
+// Función para crear el nodo de while
+ASTWhileNode* createWhileNode(ASTNode* condition, ASTNode* body) {
+    ASTWhileNode* node = (ASTWhileNode*)malloc(sizeof(ASTWhileNode));
+    if (!node) {
+        fprintf(stderr, "Error: no se pudo asignar memoria para ASTWhileNode.\n");
+        exit(EXIT_FAILURE);
+    }
+    node->base.type = AST_WHILE;
+    node->condition = condition;
+    node->body = body;
+    return node;
+}
+
+// Función para crear el nodo de return
+ASTReturnNode* createReturnNode(ASTNode* expression) {
+    ASTReturnNode* node = (ASTReturnNode*)malloc(sizeof(ASTReturnNode));
+    if (!node) {
+        fprintf(stderr, "Error: no se pudo asignar memoria para ASTReturnNode.\n");
+        exit(EXIT_FAILURE);
+    }
+    node->base.type = AST_RETURN;
+    node->expression = expression;
+    return node;
+}
+
+// Función para crear el nodo de print
+ASTPrintNode* createPrintNode(ASTNode* arguments) {
+    ASTPrintNode* node = (ASTPrintNode*)malloc(sizeof(ASTPrintNode));
+    if (!node) {
+        fprintf(stderr, "Error: no se pudo asignar memoria para ASTPrintNode.\n");
+        exit(EXIT_FAILURE);
+    }
+    node->base.type = AST_PRINT;
+    node->arguments = arguments;
+    return node;
+}
+
+//Lectura de funcion
+ASTFunctionCallNode* createFunctionCallNode(const char* functionName, ASTNode* arguments) {
+    ASTFunctionCallNode* node = (ASTFunctionCallNode*)malloc(sizeof(ASTFunctionCallNode));
+    if (!node) {
+        fprintf(stderr, "Error: no se pudo asignar memoria para ASTFunctionCallNode.\n");
+        exit(EXIT_FAILURE);
+    }
+    node->base.type = AST_FUNCTION_CALL;
+    node->functionName = strdup(functionName); // Copia del nombre de la función
+    node->arguments = arguments;               // Lista de argumentos
+    return node;
+}
+
+//
+ASTMemberAccessNode* createMemberAccessNode(ASTNode* expression, const char* memberName) {
+    ASTMemberAccessNode* node = (ASTMemberAccessNode*)malloc(sizeof(ASTMemberAccessNode));
+    if (!node) {
+        fprintf(stderr, "Error: no se pudo asignar memoria para ASTMemberAccessNode.\n");
+        exit(EXIT_FAILURE);
+    }
+    node->base.type = AST_MEMBER_ACCESS;
+    node->expression = expression;
+    node->memberName = strdup(memberName);  // Copiar el nombre del miembro
+    return node;
+}
+
+ASTMethodCallNode* createMethodCallNode(ASTNode* expression, const char* methodName, ASTNode* arguments) {
+    ASTMethodCallNode* node = (ASTMethodCallNode*)malloc(sizeof(ASTMethodCallNode));
+    if (!node) {
+        fprintf(stderr, "Error: no se pudo asignar memoria para ASTMethodCallNode.\n");
+        exit(EXIT_FAILURE);
+    }
+    node->base.type = AST_METHOD_CALL;
+    node->expression = expression;
+    node->methodName = strdup(methodName);  // Copiar el nombre del método
+    node->arguments = arguments;            // Asignar los argumentos
+    return node;
+}
+
+//Función para crear lista de identificadores
+
+ASTNode* createIdentifierListNode(ASTNode* first, ASTNode* second) {
+    ASTIdentifierListNode* node = (ASTIdentifierListNode*)malloc(sizeof(ASTIdentifierListNode));
+    if (!node) {
+        fprintf(stderr, "Error: no se pudo asignar memoria para ASTIdentifierListNode.\n");
+        exit(EXIT_FAILURE);
+    }
+    node->base.type = AST_IDENTIFIER_LIST;
+    node->identifiers = first;  // El primer identificador
+    if (second) {
+        // Si hay un segundo identificador, lo agregamos a la lista
+        ASTNode* temp = first;
+        while (temp->next) {
+            temp = temp->next;
+        }
+        temp->next = second;
+    }
+    return (ASTNode*)node;
+}
+
+ASTNode* createStringLiteralNode(const char* value) {
+    ASTStringLiteralNode* node = (ASTStringLiteralNode*)malloc(sizeof(ASTStringLiteralNode));
+    if (!node) {
+        fprintf(stderr, "Error allocating memory for string literal node.\n");
+        exit(EXIT_FAILURE);
+    }
+    node->base.type = AST_STRING_LITERAL;
+    node->value = strdup(value);
+    return (ASTNode*)node;
+}
+
+//Función super
+ASTNode* createSuperNode() {
+    ASTSuperNode* node = (ASTSuperNode*)malloc(sizeof(ASTSuperNode));
+    if (!node) {
+        fprintf(stderr, "Error: no se pudo asignar memoria para ASTSuperNode.\n");
+        exit(EXIT_FAILURE);
+    }
+    node->base.type = AST_SUPER;
+    return (ASTNode*)node;
+}

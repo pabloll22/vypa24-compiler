@@ -43,8 +43,13 @@ typedef enum {
     AST_LITERAL,    // Nodo para literales
     AST_BINARY_OP,  // Nodo para operadores binarios
     AST_UNARY_OP,   // Nodo para operadores unarios
-    AST_CALL,
+    AST_FUNCTION_CALL,
     AST_NEW,
+    AST_MEMBER_ACCESS,
+    AST_METHOD_CALL,
+    AST_IDENTIFIER_LIST,
+    AST_STRING_LITERAL,
+    AST_SUPER,
 } ASTNodeType;
 
 // Nodo genérico del AST
@@ -119,11 +124,11 @@ typedef struct {
     char* name;    // Nombre de la variable o función
 } ASTVariableNode;
 
-typedef struct {
-    ASTNode base;  // Nodo base
-    char* functionName;  // Nombre de la función
-    ASTNode* arguments;   // Lista de argumentos
-} ASTCallNode;
+typedef struct ASTFunctionCallNode {
+    ASTNode base;          // Nodo base
+    char* functionName;    // Nombre de la función
+    ASTNode* arguments;    // Lista de argumentos de la función
+} ASTFunctionCallNode;
 
 // Nodo para el bloque
 typedef struct ASTBlockNode {
@@ -131,11 +136,71 @@ typedef struct ASTBlockNode {
     ASTNode* statements;     // Lista de declaraciones o sentencias en el bloque
 } ASTBlockNode;
 
+//Nodo de new
 typedef struct ASTNewNode {
     ASTNode base;         // Nodo base
     char* className;      // Nombre de la clase que se está instanciando
     ASTNode* arguments;   // Lista de argumentos del constructor (si existen)
 } ASTNewNode;
+
+// Nodo de if
+typedef struct ASTIfNode {
+    ASTNode base;
+    ASTNode* condition; // Condición del if
+    ASTNode* trueBlock; // Bloque de código del if
+    ASTNode* falseBlock; // Bloque de código del else (si existe)
+} ASTIfNode;
+
+// Nodo de while
+typedef struct ASTWhileNode {
+    ASTNode base;
+    ASTNode* condition; // Condición del while
+    ASTNode* body;      // Cuerpo del while
+} ASTWhileNode;
+
+// Nodo de return
+typedef struct ASTReturnNode {
+    ASTNode base;
+    ASTNode* expression; // Expresión a retornar
+} ASTReturnNode;
+
+// Nodo de print
+typedef struct ASTPrintNode {
+    ASTNode base;
+    ASTNode* arguments;  // Lista de argumentos para print
+} ASTPrintNode;
+
+// Nodo para acceder a un atributo o método
+typedef struct ASTMemberAccessNode {
+    ASTNode base;          // Nodo base
+    ASTNode* expression;   // Expresión antes del punto (e.g., obj en obj.field)
+    char* memberName;      // El nombre del atributo o método
+} ASTMemberAccessNode;
+
+// Nodo para una llamada a un método
+typedef struct ASTMethodCallNode {
+    ASTNode base;          // Nodo base
+    ASTNode* expression;   // Expresión antes del punto (e.g., obj en obj.method())
+    char* methodName;      // El nombre del método
+    ASTNode* arguments;    // Argumentos de la llamada al método
+} ASTMethodCallNode;
+
+//Lista de identificadores
+typedef struct ASTIdentifierListNode {
+    ASTNode base;          // Nodo base (común a todos los nodos AST)
+    ASTNode* identifiers;  // Lista de identificadores (nodos AST_VARIABLE)
+} ASTIdentifierListNode;
+
+//Strings
+typedef struct ASTStringLiteralNode {
+    ASTNode base;          // Nodo base
+    char* value;           // Valor de la cadena literal
+} ASTStringLiteralNode;
+
+//Super
+typedef struct ASTSuperNode {
+    ASTNode base;          // Nodo base
+} ASTSuperNode;
 
 // Funciones para crear nodos
 ASTProgramNode* createProgramNode(ASTNode* classes, ASTNode* functions);
@@ -152,9 +217,18 @@ ASTBinaryOpNode* createBinaryOpNode(BinaryOperator op, ASTNode* left, ASTNode* r
 ASTUnaryOpNode* createUnaryOpNode(UnaryOperator op, ASTNode* operand);
 ASTLiteralNode* createLiteralNode(const char* value, const char* type);
 ASTVariableNode* createVariableNode(const char* name);
-ASTCallNode* createCallNode(const char* functionName, ASTNode* arguments);
+ASTFunctionCallNode* createFunctionCallNode(const char* functionName, ASTNode* arguments);
 ASTNode* appendNode(ASTNode* list, ASTNode* node);
 ASTBlockNode* createBlockNode(ASTNode* statements);
 ASTNewNode* createNewNode(const char* className, ASTNode* arguments);
+ASTIfNode* createIfNode(ASTNode* condition, ASTNode* trueBlock, ASTNode* falseBlock);
+ASTWhileNode* createWhileNode(ASTNode* condition, ASTNode* body);
+ASTReturnNode* createReturnNode(ASTNode* expression);
+ASTPrintNode* createPrintNode(ASTNode* arguments);
+ASTMemberAccessNode* createMemberAccessNode(ASTNode* expression, const char* memberName);
+ASTMethodCallNode* createMethodCallNode(ASTNode* expression, const char* methodName, ASTNode* arguments);
+ASTNode* createIdentifierListNode(ASTNode* first, ASTNode* second);
+ASTNode* createStringLiteralNode(const char* value);
+ASTNode* createSuperNode();
 
 #endif // AST_H
