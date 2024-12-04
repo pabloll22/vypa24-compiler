@@ -1,5 +1,7 @@
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "symbol_table.h"
 #include "ast.h"
 #include "parser.h"
 #include "string.h"
@@ -9,6 +11,7 @@ extern int yyparse();
 extern int yydebug;
 extern FILE* yyin;
 //ASTNode* root = NULL;
+SymbolTable symbol_table;
 
 // Función para imprimir el AST (puedes extenderla según lo que quieras mostrar)
 void printAST(ASTNode* node, int indent) {
@@ -68,25 +71,7 @@ void printAST(ASTNode* node, int indent) {
                 case OP_GE: printf(">="); break;
                 default: printf("unknown"); break;
             }
-        /*
-            printf("\n");
-            // Verificar los tipos si están disponibles
-            if (binaryNode->left && binaryNode->right) {
-                const char* leftType = binaryNode->left->type ? binaryNode->left->type : "unknown";
-                const char* rightType = binaryNode->right->type ? binaryNode->right->type : "unknown";
-                printf("  Left Type: %s\n", leftType);
-                printf("  Right Type: %s\n", rightType);
-                // Si es relevante, puedes verificar compatibilidad aquí
-                if (strcmp(leftType, rightType) != 0 && binaryNode->op != OP_ASSIGN) {
-                        fprintf(stderr, "Warning: Type mismatch in binary operation: %s %s %s\n",
-                        leftType,
-                        (binaryNode->op == OP_ADD) ? "+" : "other",
-                        rightType);
-                }
-             }else{
-                printf("  Warning: One or both operands are missing.\n");
-             }
-        */
+
             // Imprimir los operandos izquierdo y derecho
             printf("\n");
             printf("%*s  Left: ",indent+2, "");
@@ -223,6 +208,8 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
+    init_symbol_table(&symbol_table);
+
 //    yydebug = 1;
 
     FILE* inputFile = fopen(argv[1], "r");
@@ -240,6 +227,7 @@ int main(int argc, char** argv) {
         printf("Parsing failed.\n");
         return EXIT_FAILURE;
     }
+
     fclose(inputFile);
 
     // Check if the AST was constructed
@@ -251,5 +239,9 @@ int main(int argc, char** argv) {
     // Print the AST
     printf("Abstract Syntax Tree (AST):\n");
     printAST(root, 0);  // Assuming printAST takes the root and an indent level
+
+    // Muestra el contenido de la tabla de símbolos
+    printf("\nSymbol Table:\n");
+    print_symbol_table(&symbol_table);  // Función que imprimirá la tabla de símbolos
     return EXIT_SUCCESS;
 }

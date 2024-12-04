@@ -1,4 +1,5 @@
 %{
+#include "symbol_table.h"
 #include "ast.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,7 +10,10 @@ extern int yylex();
 extern char* yytext;
 
 void yyerror(const char* msg);
+
+extern SymbolTable symbol_table;
 extern ASTNode* root;
+
 ASTNode* root = NULL;
 
 %}
@@ -76,10 +80,26 @@ class_definitions:
 
 class_definition:
     CLASS IDENTIFIER ':' IDENTIFIER '{' class_body '}' {
-        $$ = (ASTNode*)createClassNode($2, $4, $6);  // Crear nodo de clase
+        // Añadir la clase a la tabla de símbolos
+        if (find_symbol(&symbol_table, $2) == -1) {
+            // Indicamos que este es un símbolo de tipo "clase"
+            add_symbol(&symbol_table, $2, "class", false, true, false, NULL, 0);  // $2 es el nombre de la clase
+            // Ahora procesamos los miembros de la clase (atributos y métodos)
+            $$ = (ASTNode*)createClassNode($2, $4, $6);  // Crear nodo de clase con herencia
+        } else {
+            yyerror("Class already declared");  // Error si la clase ya está declarada
+            $$ = NULL;
+        }
     }
     | CLASS IDENTIFIER '{' class_body '}' {
-        $$ = (ASTNode*)createClassNode($2, NULL, $4);  // Sin herencia
+        // Añadir la clase a la tabla de símbolos sin herencia
+        if (find_symbol(&symbol_table, $2) == -1) {
+            add_symbol(&symbol_table, $2, "class", false, true, false, NULL, 0);  // $2 es el nombre de la clase
+            $$ = (ASTNode*)createClassNode($2, NULL, $4);  // Crear nodo de clase sin clase base
+        } else {
+            yyerror("Class already declared");
+            $$ = NULL;
+        }
     }
 ;
 
@@ -104,17 +124,59 @@ class_member:
 function_definitions:
     function_definitions function_definition {
         $$ = (ASTNode*)appendNode($1, $2);  // Combina la lista de funciones con una nueva función
+
+        // Verificar si la función ya está en la tabla de símbolos
+        ASTFunctionNode* funcNode = (ASTFunctionNode*)$2;
+        if (find_symbol(&symbol_table, funcNode->name) == -1) {
+            printf("Adding function: %s\n", funcNode->name);
+                    // Agregar la función a la tabla de símbolos
+            add_symbol(&symbol_table, funcNode->name, funcNode->returnType, true, false, false, NULL, 0);  // Parámetros NULL por ahora
+        } else {
+            yyerror("Function already declared");
+        }
     }
     | function_definition {
         $$ = $1;  // La lista inicial es simplemente el primer nodo
+        ASTFunctionNode* funcNode = (ASTFunctionNode*)$1;
+        if (find_symbol(&symbol_table, funcNode->name) == -1) {
+            printf("Adding function: %s\n", funcNode->name);
+            // Agregar la función a la tabla de símbolos
+            add_symbol(&symbol_table, funcNode->name, funcNode->returnType, true, false, false, NULL, 0);  // Parámetros NULL por ahora
+        } else {
+            yyerror("Function already declared");
+        }
     }
 ;
 
+
 function_definition:
     type IDENTIFIER '(' parameter_list ')' block {
+        // Crear el nodo de la función
         $$ = (ASTNode*)createFunctionNode($2, $1, $4, $6);  // Crear nodo de función
+        // Contar el número de parámetros
+        printf("Parameters: ");
+        int param_count = 0;
+        ASTNode* param_node = $4;
+        while (param_node) {
+            param_count++;
+            param_node = param_node->next;
+        }
+
+        // Verificar si la función ya está en la tabla de símbolos
+        int found = find_symbol(&symbol_table, $2);  // Buscar la función por su nombre
+        if (found == -1) {
+            // Si la función no está declarada, agregarla a la tabla de símbolos
+            printf("Adding function: %s with %d parameters\n", $2, param_count);
+            add_symbol(&symbol_table, $2, $1, true, false, false, NULL, param_count);  // Agregar función a la tabla de símbolos
+        } else {
+            // Si la función ya está declarada, reportar un error
+            yyerror("Function already declared");
+            $$ = NULL;  // Indicar que la función no se debe agregar al árbol
+        }
     }
 ;
+
+
 parameter_list:
     /* vacío */ {
         $$ = NULL; // Sin parámetros, la lista será NULL
@@ -138,21 +200,53 @@ parameter_declaration_list:
 
 parameter_declaration:
     type IDENTIFIER {
-        $$ = (ASTNode*)createDeclarationNode($1, $2, NULL); // Crear nodo para un parámetro
+        printf("Creating parameter: type=%s, name=%s\n", $1, $2);
+        // Añadir el parámetro a la tabla de símbolos
+        if (find_symbol(&symbol_table, $2) == -1) {
+            add_symbol(&symbol_table, $2, $1, false, false, false, NULL, 0);  // Añadir parámetro a la tabla
+            $$ = (ASTNode*)createDeclarationNode($1, $2, NULL);  // Crear nodo de parámetro sin inicialización
+        } else {
+            yyerror("Parameter already declared");
+            $$ = NULL;  // Indicar que el parámetro no debe ser añadido
+        }
     }
 ;
 
+
 // Declaraciones
 declaration:
-    type IDENTIFIER ';' {
+    |type IDENTIFIER ';' {
         printf("Creating declaration: type=%s, name=%s\n", $1, $2);
-        $$ = (ASTNode*)createDeclarationNode($1, $2, NULL);  // Declaración sin inicialización
+
+        // Verificar si la variable ya está declarada
+        int found = find_symbol(&symbol_table, $2);
+        if (found == -1) {
+            printf("Symbol not found, adding: %s\n", $2);
+            // Si la variable no está declarada, agregarla a la tabla de símbolos
+            add_symbol(&symbol_table, $2, $1, false, false, false, NULL, 0);  // Agregar variable
+            $$ = (ASTNode*)createDeclarationNode($1, $2, NULL);  // Crear nodo de declaración sin inicialización
+        } else {
+            // Si la variable ya está declarada, reportar un error
+            yyerror("Variable already declared");
+            $$ = NULL;
+        }
     }
     | type IDENTIFIER '=' expression ';' {
         printf("Creating declaration with initialization: type=%s, name=%s\n", $1, $2);
-        $$ = (ASTNode*)createDeclarationNode($1, $2, $4);  // Declaración con inicialización
+        // Verificar si la variable ya está declarada
+        int found = find_symbol(&symbol_table, $2);
+        if (found == -1) {
+            printf("Symbol not found, adding: %s\n", $2);
+            // Si la variable no está declarada, agregarla a la tabla de símbolos
+            add_symbol(&symbol_table, $2, $1, false, false, false, NULL, 0);  // Agregar variable
+            $$ = (ASTNode*)createDeclarationNode($1, $2, $4);  // Crear nodo de declaración con inicialización
+        } else {
+            // Si la variable ya está declarada, reportar un error
+            yyerror("Variable already declared");
+            $$ = NULL;
+        }
     }
-    | type IDENTIFIER ',' IDENTIFIER_LIST ';' {
+    |type IDENTIFIER ',' IDENTIFIER_LIST ';' {
         printf("Creating declaration list: type=%s, name=%s\n", $1, $2);
         $$ = (ASTNode*)createDeclarationListNode($2, $4);  // Múltiples declaraciones
     }
@@ -227,6 +321,7 @@ declaration_or_statement:
         $$ = $1;  // Si es una sentencia, asignamos el nodo de la sentencia
     }
 ;
+
 
 // Sentencias
 statement:

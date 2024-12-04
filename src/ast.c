@@ -118,6 +118,7 @@ ASTVariableNode* createVariableNode(const char* name) {
         exit(EXIT_FAILURE);
     }
     node->base.type = AST_VARIABLE;
+    node->base.next = NULL;
     node->name = strdup(name);
     return node;
 }
