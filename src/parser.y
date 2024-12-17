@@ -415,7 +415,7 @@ expression:
         // Access to attribute or method
         $$ = (ASTNode*)createMemberAccessNode($1, $3);
   }
-  | expression '.' IDENTIFIER '(' argument_list ')'  / * Method call */ {
+  | expression '.' IDENTIFIER '(' argument_list ')'{
         $$ = (ASTNode*)createMethodCallNode($1, $3, $5);
   }
   | IDENTIFIER '.' IDENTIFIER '=' expression ';' {
@@ -423,7 +423,7 @@ expression:
                                        (ASTNode*)createMemberAccessNode(createVariableNode($1), $3),
                                        $5);
   }
-  | IDENTIFIER '.' IDENTIFIER / * Access to attribute */ {
+  | IDENTIFIER '.' IDENTIFIER{
         // Access to attribute
         $$ = (ASTNode*)createMemberAccessNode(createVariableNode($1), $3);
   }
