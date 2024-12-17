@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-// Operadores binarios
+// Binary operators
 typedef enum {
     OP_ASSIGN,  //=
     OP_ADD,     // +
@@ -20,29 +20,29 @@ typedef enum {
     OP_NE,      // !=
 } BinaryOperator;
 
-// Operadores unarios
+// Unario operators
 typedef enum {
     OP_NEG,     // -
     OP_NOT,     // !
 } UnaryOperator;
 
-// Tipo de nodo del AST
+// AST node type
 typedef enum {
-    AST_PROGRAM, // Nodo raíz para el programa
-    AST_CLASS,      // Nodo para una clase
-    AST_FUNCTION,   // Nodo para una función
-    AST_DECLARATION, // Nodo para declaraciones
-    AST_ASSIGNMENT,  // Nodo para asignaciones
-    AST_BLOCK,      // Nodo para bloques
-    AST_IF,         // Nodo para sentencias if
-    AST_WHILE,      // Nodo para sentencias while
-    AST_RETURN,     // Nodo para sentencias return
-    AST_PRINT,      // Nodo para sentencias print
-    AST_EXPRESSION, // Nodo para expresiones
-    AST_VARIABLE,   // Nodo para variables
-    AST_LITERAL,    // Nodo para literales
-    AST_BINARY_OP,  // Nodo para operadores binarios
-    AST_UNARY_OP,   // Nodo para operadores unarios
+    AST_PROGRAM, // Root node for the program
+    AST_CLASS,      // Class node
+    AST_FUNCTION,   // Node for a function
+    AST_DECLARATION, // Node for statements
+    AST_ASSIGNMENT,  // Node for assignments
+    AST_BLOCK,      // Node for blocks
+    AST_IF,         // Node for IF sentences
+    AST_WHILE,      // While sentences node
+    AST_RETURN,     // Return sentences node
+    AST_PRINT,      // Print sentences node
+    AST_EXPRESSION, // Node for expressions
+    AST_VARIABLE,   // Node for variables
+    AST_LITERAL,    // Node for literals
+    AST_BINARY_OP,  // Node for binary operators
+    AST_UNARY_OP,   // Node for Unarium Operators
     AST_FUNCTION_CALL,
     AST_NEW,
     AST_MEMBER_ACCESS,
@@ -54,151 +54,151 @@ typedef enum {
     AST_THIS,
 } ASTNodeType;
 
-// Nodo genérico del AST
+// Generic AST node
 typedef struct ASTNode {
-    ASTNodeType type;              // Tipo del nodo
-    struct ASTNode* next;          // Apuntador al siguiente nodo en una lista
+    ASTNodeType type;              // Type of the knot
+    struct ASTNode* next;          // Pointed to the next node on a list
 } ASTNode;
 
 extern ASTNode* root;
 
-// Nodo para el programa
+// Program node
 typedef struct {
-    ASTNode base;                  // Nodo base
-    ASTNode* classes;              // Lista de clases
-    ASTNode* functions;            // Lista de funciones
+    ASTNode base;                  // Base knot
+    ASTNode* classes;              // Class list
+    ASTNode* functions;            // Functions list
 } ASTProgramNode;
 
-// Nodo para una clase
+// Class node
 typedef struct {
     ASTNode base;
-    char* name;                    // Nombre de la clase
-    char* parent;                  // Nombre de la clase padre (puede ser NULL)
-    ASTNode* members;              // Lista de declaraciones y funciones
+    char* name;                    // Class name
+    char* parent;                  // Father class name (it can be null)
+    ASTNode* members;              // List of statements and functions
 } ASTClassNode;
 
-// Nodo para una función
+// Node for a function
 typedef struct {
     ASTNode base;
-    char* name;                    // Nombre de la función
-    char* returnType;              // Tipo de retorno
-    ASTNode* parameters;           // Lista de parámetros
+    char* name;                    // Function name
+    char* returnType;              // Return type
+    ASTNode* parameters;           // Parameter list
     int param_count;
-    ASTNode* body;                 // Cuerpo de la función
+    ASTNode* body;                 // Body of the function
 } ASTFunctionNode;
 
-// Nodo para una declaración (variables o atributos)
+// Node for a statement (variables or attributes)
 typedef struct {
     ASTNode base;
-    char* type;                    // Tipo de la variable
-    char* name;                    // Nombre de la variable
-    ASTNode* init;                 // Expresión de inicialización (puede ser NULL)
+    char* type;                    // Variable type
+    char* name;                    // Variable name
+    ASTNode* init;                 // Initialization expression (it can be null)
 } ASTDeclarationNode;
 
-// Nodo para una lista de declaraciones
+// Node for a list of statements
 typedef struct {
     ASTNode base;
-    ASTNode* declaration;          // Declaración actual
-    ASTNode* next;                 // Siguiente declaración en la lista
+    ASTNode* declaration;          // Current statement
+    ASTNode* next;                 // Next statement in the list
 } ASTDeclarationListNode;
 
 typedef struct {
-    ASTNode base;  // Nodo base
-    ASTNode* left;  // Expresión izquierda
-    ASTNode* right; // Expresión derecha
-    BinaryOperator op;  // Operador binario
+    ASTNode base;  // Base knot
+    ASTNode* left;  // Left expression
+    ASTNode* right; // Right expression
+    BinaryOperator op;  // Binary operator
 } ASTBinaryOpNode;
 
 
 typedef struct {
-    ASTNode base;  // Nodo base
-    ASTNode* operand;  // Operando (en el caso de operadores unarios)
-    UnaryOperator op;  // Operador unario
+    ASTNode base;  // Base knot
+    ASTNode* operand;  // Operating (in the case of unarium operators)
+    UnaryOperator op;  // Unario operator
 } ASTUnaryOpNode;
 
 typedef struct {
-    ASTNode base;  // Nodo base
-    char* value;   // Valor literal (entero, cadena, etc.)
-    char* literalType;    // Tipo de literal (int, string, etc.)
+    ASTNode base;  // Base knot
+    char* value;   // Literal value (whole, chain, etc.)
+    char* literalType;    // tipoDeLiteral (int,String,Etc.)
 } ASTLiteralNode;
 
 typedef struct {
-    ASTNode base;  // Nodo base
-    char* name;    // Nombre de la variable o función
+    ASTNode base;  // Base knot
+    char* name;    // Variable or function name
 } ASTVariableNode;
 
 typedef struct ASTFunctionCallNode {
-    ASTNode base;          // Nodo base
-    char* functionName;    // Nombre de la función
+    ASTNode base;          // Base knot
+    char* functionName;    // Function name
     ASTNode* context;
-    ASTNode* arguments;    // Lista de argumentos de la función
+    ASTNode* arguments;    // List of arguments of the function
 } ASTFunctionCallNode;
 
 // Nodo para el bloque
 typedef struct ASTBlockNode {
     ASTNode base;            // Nodo base
-    ASTNode* statements;     // Lista de declaraciones o sentencias en el bloque
+    ASTNode* statements;     // List of statements or sentences in the block
 } ASTBlockNode;
 
 //Nodo de new
 typedef struct ASTNewNode {
     ASTNode base;         // Nodo base
-    char* className;      // Nombre de la clase que se está instanciando
-    ASTNode* arguments;   // Lista de argumentos del constructor (si existen)
+    char* className;      // Class name that is instance
+    ASTNode* arguments;   // Builder's argument list (if they exist)
 } ASTNewNode;
 
 // Nodo de if
 typedef struct ASTIfNode {
     ASTNode base;
-    ASTNode* condition; // Condición del if
-    ASTNode* trueBlock; // Bloque de código del if
-    ASTNode* falseBlock; // Bloque de código del else (si existe)
+    ASTNode* condition; // IF condition
+    ASTNode* trueBlock; // IF code block
+    ASTNode* falseBlock; // Else code block (if it exists)
 } ASTIfNode;
 
 // Nodo de while
 typedef struct ASTWhileNode {
     ASTNode base;
-    ASTNode* condition; // Condición del while
-    ASTNode* body;      // Cuerpo del while
+    ASTNode* condition; // CWhile condition
+    ASTNode* body;      // While body
 } ASTWhileNode;
 
 // Nodo de return
 typedef struct ASTReturnNode {
     ASTNode base;
-    ASTNode* expression; // Expresión a retornar
+    ASTNode* expression; // Expression to return
 } ASTReturnNode;
 
 // Nodo de print
 typedef struct ASTPrintNode {
     ASTNode base;
-    ASTNode* arguments;  // Lista de argumentos para print
+    ASTNode* arguments;  // List of arguments for print
 } ASTPrintNode;
 
-// Nodo para acceder a un atributo o método
+// Node to access an attribute or method
 typedef struct ASTMemberAccessNode {
-    ASTNode base;          // Nodo base
-    ASTNode* expression;   // Expresión antes del punto (e.g., obj en obj.field)
-    char* memberName;      // El nombre del atributo o método
+    ASTNode base;          // Base knot
+    ASTNode* expression;   // Expression before the point (E.G., Obj in Obj.field)
+    char* memberName;      // The name of the attribute or method
 } ASTMemberAccessNode;
 
-// Nodo para una llamada a un método
+// Node for a call to a method
 typedef struct ASTMethodCallNode {
-    ASTNode base;          // Nodo base
-    ASTNode* expression;   // Expresión antes del punto (e.g., obj en obj.method())
-    char* methodName;      // El nombre del método
-    ASTNode* arguments;    // Argumentos de la llamada al método
+    ASTNode base;          // Base knot
+    ASTNode* expression;   // Expression before the point (E.G., Obj in Obj.method ())
+    char* methodName;      // The name of the method
+    ASTNode* arguments;    // Arguments of the call call
 } ASTMethodCallNode;
 
-//Lista de identificadores
+//List of identifiers
 typedef struct ASTIdentifierListNode {
-    ASTNode base;          // Nodo base (común a todos los nodos AST)
-    ASTNode* identifiers;  // Lista de identificadores (nodos AST_VARIABLE)
+    ASTNode base;          // Base node (common to all AST nodes)
+    ASTNode* identifiers;  // List of identifiers (Ast_variable nodes)
 } ASTIdentifierListNode;
 
 //Strings
 typedef struct ASTStringLiteralNode {
-    ASTNode base;          // Nodo base
-    char* value;           // Valor de la cadena literal
+    ASTNode base;          // Base knot
+    char* value;           // Literal chain value
 } ASTStringLiteralNode;
 
 //Super
@@ -208,15 +208,15 @@ typedef struct ASTSuperNode {
 
 typedef struct ASTTypeCastNode {
     ASTNode base;          // Nodo base
-    char* typeName;        // Tipo al que se está convirtiendo
-    ASTNode* expression;   // Expresión a la que se aplica la conversión
+    char* typeName;        // Type to which it is becoming
+    ASTNode* expression;   // Expression to which conversion is applied
 } ASTTypeCastNode;
 
 typedef struct ASTThisNode {
     ASTNode base; // Nodo base
 } ASTThisNode;
 
-// Funciones para crear nodos
+// Functions to create nodes
 ASTProgramNode* createProgramNode(ASTNode* classes, ASTNode* functions);
 ASTClassNode* createClassNode(const char* name, const char* parent, ASTNode* members);
 ASTFunctionNode* createFunctionNode(const char* name, const char* returnType, ASTNode* parameters, ASTNode* body);

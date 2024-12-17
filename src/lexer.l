@@ -1,5 +1,5 @@
 %{
-#include "symbol_table.h" // Incluye la tabla de símbolos
+#include "symbol_table.h"
 #include "ast.h"
 #include "parser.h"
 #include <stdio.h>

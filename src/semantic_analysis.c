@@ -32,32 +32,32 @@ const char* getNodeTypeString(ASTNodeType type) {
         case AST_TYPE_CAST: return "AST_TYPE_CAST";
         case AST_THIS: return "AST_THIS";
         default:
-	    printf("Unknown node type encountered: %d\n", type);  // Agregado para imprimir el valor numérico
+	    printf("Unknown node type encountered: %d\n", type);  // Aggregate to print the numerical value
             return "Unknown";
     }
 }
 
-// Realiza el análisis semántico del árbol AST
+// Perform the semantic analysis of the AST tree
 int performSemanticAnalysis(ASTNode* root, SymbolTable* symbolTable) {
-    if (!root) return 0; // No hay nada que analizar
+    if (!root) return 0; // There is nothing to analyze
     printf("ROOT type: %s\n", getNodeTypeString(root->type));
 
     switch (root->type) {
         case AST_PROGRAM: {
             ASTProgramNode* program = (ASTProgramNode*)root;
 
-	    // Analizamos las clases (recorrer lista terminada en NULL)
+	    // We analyze the classes (tour Null finished list)
             ASTNode* classNode = program->classes;
             while (classNode != NULL) {
-                performSemanticAnalysis(classNode, symbolTable);  // Llamamos a performSemanticAnalysis para cada clase
-                classNode = classNode->next;  // Avanzamos al siguiente nodo de clase
+                performSemanticAnalysis(classNode, symbolTable);  // We call perforganicanalysis for each class
+                classNode = classNode->next;  // We advance to the next class node
             }
 
-            // Analizamos las funciones (recorrer lista terminada en NULL)
+            // We analyze the functions (tour Null finished list)
             ASTNode* functionNode = program->functions;
             while (functionNode != NULL) {
-                performSemanticAnalysis(functionNode, symbolTable);  // Llamamos a performSemanticAnalysis para cada función
-                functionNode = functionNode->next;  // Avanzamos al siguiente nodo de función
+                performSemanticAnalysis(functionNode, symbolTable);  // We call perforganalysis for each function
+                functionNode = functionNode->next;  // We advance to the next function node
             }
 
             break;
@@ -65,7 +65,7 @@ int performSemanticAnalysis(ASTNode* root, SymbolTable* symbolTable) {
         case AST_FUNCTION: {
             ASTFunctionNode* function = (ASTFunctionNode*)root;
 
-            // Llamar recursivamente para los parámetros y cuerpo
+            // Call for parameters and body
 	    if (function->parameters) {
 	        performSemanticAnalysis(function->parameters, symbolTable);
 	    }
@@ -78,37 +78,37 @@ int performSemanticAnalysis(ASTNode* root, SymbolTable* symbolTable) {
 	case AST_VARIABLE: {
             ASTVariableNode* varNode = (ASTVariableNode*)root;
             if (find_symbol(symbolTable, varNode->name) == -1) {
-                fprintf(stderr, "Error: Variable '%s' no declarada.\n", varNode->name);
+                fprintf(stderr, "error:Variable '%s' not declared.\n", varNode->name);
                 return -1;
             }
             break;
         }
         case AST_DECLARATION: {
 	    ASTDeclarationNode* decl = (ASTDeclarationNode*)root;
-	    // Verificar si el tipo es una clase definida
+	    // Verify if the type is a definite class
 	    if (!isValidType(decl->type) && !isDefinedClass(decl->type, symbolTable)) {
-	        fprintf(stderr, "Error: Tipo desconocido '%s' para la variable '%s'.\n", decl->type, decl->name);
+	        fprintf(stderr, "Error: Unknown type '%s' For the variable '%s'.\n", decl->type, decl->name);
 	        return -1;
 	    }
-	    // Verificar si la variable ya está declarada
+	    // Verify if the variable is already declared
 	    if (check_variable_declaration(symbolTable, decl->name) == -1) {
-	        return -1; // Error ya reportado
+	        return -1; // Error already reported
 	    }
 
 	    // Agregar la variable a la tabla de símbolos
 	    //add_symbol(symbolTable, decl->name, decl->type, false, false, false, NULL, 0);
 
-	    // Si hay inicialización, realiza el análisis semántico de la expresión
+	    // If there is initialization, perform the semantic analysis of the expression
 	    if (decl->init) {
 	        const char* initType = getNodeType(decl->init, symbolTable);
 	        if (!initType) {
-	            fprintf(stderr, "Error: Tipo de inicialización no válido para '%s'.\n", decl->name);
+	            fprintf(stderr, "Error: type of initialization not valid for '%s'.\n", decl->name);
 	            return -1;
 	        }
 
-	        // Verifica si el tipo de la inicialización es compatible con el tipo declarado
-	        if (!check_types_compatibility(decl->type, initType, "declaración")) {
-	            fprintf(stderr, "Error: Tipos incompatibles al inicializar '%s'. Se esperaba '%s', pero se obtuvo '%s'.\n",
+	        // Verify if the type of initialization is compatible with the declared type
+	        if (!check_types_compatibility(decl->type, initType, "declaration")) {
+	            fprintf(stderr, "Error: Incompatible types when initializing '%s'. It was expected '%s', But it was obtained '%s'.\n",
 	                    decl->name, decl->type, initType);
 	            return -1;
 	        }
@@ -118,20 +118,20 @@ int performSemanticAnalysis(ASTNode* root, SymbolTable* symbolTable) {
 	case AST_BINARY_OP: {
 	    ASTBinaryOpNode* binOp = (ASTBinaryOpNode*)root;
 
-	    // Analizar el lado derecho de la operación binaria
+	    // Analyze the right side of the binary operation
 	    performSemanticAnalysis(binOp->right, symbolTable);
 
-	    // Comprobar si es una asignación (OP_ASSIGN)
+	    // Check if it is an assignment (op_assign)
 	    if (binOp->op == OP_ASSIGN) {
 	        const char* leftType = NULL;
 
-	        // Verificar si el lado izquierdo es un acceso a miembro
+	        // Verify if the left side is an access to member
 	        if (binOp->left->type == AST_MEMBER_ACCESS) {
 	            ASTMemberAccessNode* memberAccess = (ASTMemberAccessNode*)binOp->left;
 
-	            // Verificar el objeto (ejemplo: 'r' en 'r.id')
+	            // Verify the object (example: 'r' in 'r.id')
 	            if (memberAccess->expression->type != AST_VARIABLE) {
-	                fprintf(stderr, "Error: Solo se pueden asignar miembros de objetos.\n");
+	                fprintf(stderr, "Error: only members of objects can be assigned.\n");
 	                return -1;
 	            }
 
@@ -139,59 +139,59 @@ int performSemanticAnalysis(ASTNode* root, SymbolTable* symbolTable) {
 	            int objectIndex = find_symbol(symbolTable, objectNode->name);
 
 	            if (objectIndex == -1) {
-	                fprintf(stderr, "Error: Objeto '%s' no declarado.\n", objectNode->name);
+	                fprintf(stderr, "Error: Object '%s' not declared.\n", objectNode->name);
 	                return -1;
 	            }
 
 	            const char* objectType = symbolTable->symbols[objectIndex].type;
 
-	            // Obtener el tipo del miembro usando `getMemberType`
+	            // Get the type of the member using `getMemberType`
 	            const char* memberName = memberAccess->memberName;
 	            leftType = getMemberType(objectType, memberName, symbolTable);
 	            if (!leftType) {
-	                fprintf(stderr, "Error: '%s' no tiene un miembro llamado '%s'.\n", objectType, memberName);
+	                fprintf(stderr, "Error: '%s' does not have a member called '%s'.\n", objectType, memberName);
 	                return -1;
 	            }
 	        } else {
-	            // Si no es un acceso a miembro, analizar como tipo general
+	            // If it is not an access to a member, analyze as a general type
 	            leftType = getNodeType(binOp->left, symbolTable);
 	            if (!leftType) {
-	                fprintf(stderr, "Error: No se pudo determinar el tipo del lado izquierdo de la asignación.\n");
+	                fprintf(stderr, "Error: The type of the left side of the allocation could not be determined.\n");
 	                return -1;
 	            }
 	        }
 
-	        // Obtener el tipo del lado derecho de la asignación
+	        // Obtain the type of the right side of the allocation
 	        const char* rightType = getNodeType(binOp->right, symbolTable);
 	        if (!rightType) {
-	            fprintf(stderr, "Error: No se pudo determinar el tipo del lado derecho de la asignación.\n");
+	            fprintf(stderr, "Error: The type of the right side of the allocation could not be determined.\n");
 	            return -1;
 	        }
 
 	        printf("Left-hand side type: %s\n", leftType);
 	        printf("Right-hand side type: %s\n", rightType);
 
-	        // Verificar compatibilidad entre tipos básicos y clases
-	        if (!check_types_compatibility(leftType, rightType, "asignación") &&
+	        // Verify compatibility between basic types and classes
+	        if (!check_types_compatibility(leftType, rightType, "assignment") &&
 	            !areCompatibleClasses(leftType, rightType, symbolTable)) {
-	            fprintf(stderr, "Error: Tipos incompatibles al asignar '%s' a '%s'.\n", rightType, leftType);
+	            fprintf(stderr, "Error: Incompatible types when assigning '%s' a '%s'.\n", rightType, leftType);
 	            return -1;
 	        }
 	    } else {
-	        // Manejo de otras operaciones binarias (+, -, *, /, etc.)
+	        // Management of other binary operations (+, -, *, /, etc.)
 	        const char* leftType = getNodeType(binOp->left, symbolTable);
 	        const char* rightType = getNodeType(binOp->right, symbolTable);
 
 	        if (!leftType || !rightType) {
-	            fprintf(stderr, "Error: No se pudo determinar los tipos en la operación binaria.\n");
+	            fprintf(stderr, "Error: the types in the binary operation could not be determined.\n");
 	            return -1;
 	        }
 
 	        printf("Binary operation types: %s %s\n", leftType, rightType);
 
-	        // Verificar compatibilidad en operaciones binarias
-	        if (!check_types_compatibility(leftType, rightType, "operación binaria")) {
-	            fprintf(stderr, "Error: Tipos incompatibles en operación binaria entre '%s' y '%s'.\n", leftType, rightType);
+	        // Verify compatibility in binary operations
+	        if (!check_types_compatibility(leftType, rightType, "binary operation")) {
+	            fprintf(stderr, "Error: incompatible types in binary operation between '%s' y '%s'.\n", leftType, rightType);
 	            return -1;
 	        }
 	    }
@@ -200,49 +200,49 @@ int performSemanticAnalysis(ASTNode* root, SymbolTable* symbolTable) {
 	}
 
 	case AST_BLOCK: {
-	    printf("Analizando un bloque de código...\n");
+	    printf("Analyzing a block of code...\n");
 	    ASTBlockNode* blockNode = (ASTBlockNode*)root;
 
-	    // Recorre todas las declaraciones o sentencias dentro del bloque
+	    // Tour all statements or sentences within the block
 	    ASTNode* statement = blockNode->statements;
 	    while (statement) {
 	        performSemanticAnalysis(statement, symbolTable);
-	        statement = statement->next;  // Pasa al siguiente nodo en el bloque
+	        statement = statement->next;  // Go to the next node in the block
 	    }
 	    break;
 	}
 	case AST_CLASS: {
 	    ASTClassNode* classNode = (ASTClassNode*)root;
-	    printf("Analizando la clase: %s\n", classNode->name);
+	    printf("Analyzing class: %s\n", classNode->name);
 
 	    if (find_symbol(symbolTable, "Object") == -1) {
 	        add_symbol(symbolTable, "Object", "class", false, true, false, NULL, 0, NULL, NULL, 0, NULL, 0);
-	        printf("Clase 'Object' agregada a la tabla de símbolos.\n");
+	        printf("Class 'Object' added to the symbols table.\n");
 	    }
 
-	    // Verificar si la clase está en la tabla de símbolos
+	    // Verify if the class is in the symbols table
 	    int classIndex = find_symbol(symbolTable, classNode->name);
 	    if (classIndex == -1) {
-	        fprintf(stderr, "Error: Clase '%s' no está definida en la tabla de símbolos.\n", classNode->name);
+	        fprintf(stderr, "Error: class '%s' It is not defined in the symbols table.\n", classNode->name);
 	        return -1;
 	    }
 
-	    // Verificar la clase base (si existe)
+	    // Verify the base class (if it exists)
 	    if (classNode->parent) {
 	        int parentIndex = find_symbol(symbolTable, classNode->parent);
 	        if (parentIndex == -1) {
-	            fprintf(stderr, "Error: Clase base '%s' de la clase '%s' no está definida.\n",
+	            fprintf(stderr, "Error: Base class '%s' of class '%s' It is not defined.\n",
 	                    classNode->parent, classNode->name);
 	            return -1;
 	        }
 	    }
 
-	    // Analizar atributos y métodos
-	    printf("Analizando atributos y métodos de la clase '%s'\n", classNode->name);
+	    // Analyze attributes and methods
+	    printf("Analyzing class attributes and methods '%s'\n", classNode->name);
 	    ASTNode* member = classNode->members;
 	    while (member) {
-	        performSemanticAnalysis(member, symbolTable);  // Analizar cada miembro
-	        member = member->next;  // Avanzar al siguiente miembro
+	        performSemanticAnalysis(member, symbolTable);  // Analyze each member
+	        member = member->next;  // Advance to the next member
 	    }
 
 	    break;
@@ -250,22 +250,22 @@ int performSemanticAnalysis(ASTNode* root, SymbolTable* symbolTable) {
 	case AST_ASSIGNMENT: {
 	    ASTBinaryOpNode* assignment = (ASTBinaryOpNode*)root;
 
-	    // Lado derecho de la asignación
+	    // Right side of the allocation
 	    performSemanticAnalysis(assignment->right, symbolTable);
 
-	    // Lado izquierdo de la asignación (la variable)
+	    // Left side of the allocation (the variable)
 	    ASTVariableNode* varNode = (ASTVariableNode*)assignment->left;
 	    int index = find_symbol(symbolTable, varNode->name);
 	    if (index == -1) {
-	        fprintf(stderr, "Error: Variable '%s' no declarada antes de asignar.\n", varNode->name);
+	        fprintf(stderr, "Error: Variable '%s' not declared before assigning.\n", varNode->name);
 	        return -1;
 	    }
 
-	    // Verifica el tipo
+	    // Verify the guy
 	    const char* varType = symbolTable->symbols[index].type;
 	    const char* exprType = getNodeType(assignment->right, symbolTable);
-	    if (!check_types_compatibility(varType, exprType, "asignación")) {
-	        fprintf(stderr, "Error: Tipos incompatibles al asignar '%s' a '%s'.\n", exprType, varType);
+	    if (!check_types_compatibility(varType, exprType, "assignment")) {
+	        fprintf(stderr, "Error: Incompatible types when assigning '%s' a '%s'.\n", exprType, varType);
 	        return -1;
 	    }
 	    break;
@@ -298,49 +298,49 @@ int performSemanticAnalysis(ASTNode* root, SymbolTable* symbolTable) {
             break;
         }
 	case AST_FUNCTION_CALL: {
-	    printf("Analizando llamada a función...\n");
+	    printf("Analyzing function call...\n");
 
 	    ASTFunctionCallNode* funcCall = (ASTFunctionCallNode*)root;
 
-	    // Verificar si la función está declarada en la tabla de símbolos
+	    // Verify if the function is declared in the symbols table
 	    int index = find_symbol(symbolTable, funcCall->functionName);
 	    if (index == -1) {
-	        fprintf(stderr, "Error: Función '%s' no declarada.\n", funcCall->functionName);
+	        fprintf(stderr, "Error: Function '%s' not declared.\n", funcCall->functionName);
 	        return -1;
 	    }
 
-	    // Obtener información de los parámetros esperados
+	    // Obtain information from the expected parameters
 	    Symbol* functionSymbol = &symbolTable->symbols[index];
 	    if (!functionSymbol->is_function) {
-	        fprintf(stderr, "Error: '%s' no es una función.\n", funcCall->functionName);
+	        fprintf(stderr, "Error: '%s' It is not a function.\n", funcCall->functionName);
 	        return -1;
 	    }
 
-	    // Verificar que el número de argumentos coincida
+	    // Verify that the number of arguments coincides
 	    int argCount = 0;
 	    ASTNode* arg = funcCall->arguments;
 	    while (arg) {
 	        argCount++;
-	        // Analizar cada argumento recursivamente
+	        // Analyze each recursively argument
 	        if (performSemanticAnalysis(arg, symbolTable) == -1) {
-	            return -1; // Error en uno de los argumentos
+	            return -1; // Error in one of the arguments
 	        }
 	        arg = arg->next;
 	    }
 
 	    if (argCount != functionSymbol->func.param_count) {
-	        fprintf(stderr, "Error: La función '%s' esperaba %d argumentos, pero recibió %d.\n",
+	        fprintf(stderr, "Error: The function '%s' I expected %d arguments, But he received %d.\n",
 	                funcCall->functionName, functionSymbol->func.param_count, argCount);
 	        return -1;
 	    }
 
-	    // Verificar tipos de los argumentos
+	    // Verify types of arguments
 	    arg = funcCall->arguments;
 	    for (int i = 0; i < functionSymbol->func.param_count; i++) {
 	        const char* expectedType = functionSymbol->func.parameters[i];
 	        const char* actualType = getNodeType(arg, symbolTable);
 	        if (!check_parameter_type(expectedType, actualType)) {
-	            fprintf(stderr, "Error: Argumento %d en la llamada a '%s': se esperaba '%s', pero se obtuvo '%s'.\n",
+	            fprintf(stderr, "Error: Argument %d In the call to '%s': It was expected '%s', But it was obtained '%s'.\n",
 	                    i + 1, funcCall->functionName, expectedType, actualType);
 	            return -1;
 	        }
@@ -351,43 +351,43 @@ int performSemanticAnalysis(ASTNode* root, SymbolTable* symbolTable) {
 	}
 	case AST_STRING_LITERAL: {
 	    ASTLiteralNode* literal = (ASTLiteralNode*)root;
-	    printf("Literal de cadena encontrado: valor=%s\n", literal->value);
+	    printf("Found chain literal: value=%s\n", literal->value);
 	    return "string";
 	}
 	case AST_MEMBER_ACCESS: {
 	    ASTMemberAccessNode* accessNode = (ASTMemberAccessNode*)root;
-	    printf("Analizando acceso a miembro: %s\n", accessNode->memberName);
+	    printf("Analyzing member access: %s\n", accessNode->memberName);
 
-	    // Verificar si el objeto es "this"
+	    // Verify if the object is "This"
 	    if (accessNode->expression->type == AST_THIS) {
-	        // Determinar la clase de "this" (puede estar en un campo global o en la tabla de símbolos)
+	        // Determine the "This" class (may be in a global field or in the symbols table)
 	        const char* currentClassName = getNodeType(accessNode->expression, symbolTable);
 	        if (!currentClassName) {
-	            fprintf(stderr, "Error: 'this' fuera del contexto de una clase.\n");
+	            fprintf(stderr, "Error: 'This' outside the context of a class.\n");
 	            return -1;
 	        }
 
-	        // Verificar si el miembro existe en la clase actual o en las clases base
+	        // Verify if the member exists in the current class or in the base classes
 	        if (!hasClassMember(currentClassName, accessNode->memberName, symbolTable)) {
-	            fprintf(stderr, "Error: 'this' no tiene un miembro llamado '%s'.\n", accessNode->memberName);
+	            fprintf(stderr, "Error: 'This' does not have a member called '%s'.\n", accessNode->memberName);
 	            return -1;
 	        }
 	    } else {
-	        // Si no es "this", realiza el análisis semántico del objeto
+	        // If it is not "This", perform the semantic analysis of the object
 	        if (performSemanticAnalysis(accessNode->expression, symbolTable) == -1) {
 	            return -1;
 	        }
 
-	        // Verificar el tipo del objeto
+	        // Verify the type of the object
 	        const char* objectType = getNodeType(accessNode->expression, symbolTable);
 	        if (!objectType || find_symbol(symbolTable, objectType) == -1) {
-	            fprintf(stderr, "Error: Tipo de objeto desconocido o no definido para '%s'.\n", accessNode->memberName);
+	            fprintf(stderr, "Error: type of unknown or not defined object for '%s'.\n", accessNode->memberName);
 	            return -1;
 	        }
 
-	        // Verificar si el miembro existe en la clase del objeto
+	        // Verify if the member exists in the object class
 	        if (!hasClassMember(objectType, accessNode->memberName, symbolTable)) {
-	            fprintf(stderr, "Error: '%s' no tiene un miembro llamado '%s'.\n", objectType, accessNode->memberName);
+	            fprintf(stderr, "Error: '%s' does not have a member called '%s'.\n", objectType, accessNode->memberName);
 	            return -1;
 	        }
 	    }
@@ -398,50 +398,50 @@ int performSemanticAnalysis(ASTNode* root, SymbolTable* symbolTable) {
             printf("Unknown node type encountered: %d\n", root->type);
             break;
     }
-    return 0; // Análisis exitoso
+    return 0; // Successful analysis
 }
 
 
-// Verificar si una variable ya está declarada
+// Verify if a variable is already declared
 int check_variable_declaration(SymbolTable* table, const char* name) {
     int aux=find_symbol(table, name);
     //printf("Indice '%i para la función '%s'. \n",aux,name);
     if (find_symbol(table, name) == -1) {
-        fprintf(stderr, "Error: Variable '%s' ya declarada.\n", name);
-        return -1;  // Ya está declarada
+        fprintf(stderr, "Error: Variable '%s' already declared.\n", name);
+        return -1;  // It is already declared
     }
-    return 1;  // No está declarada
+    return 1;  // It is not declared
 }
 
-// Verificar si una función ya está declarada
+// Verify if a function is already declared
 int check_function_redefinition(SymbolTable* table, const char* name) {
     int aux=find_symbol(table, name);
     //printf("Indice '%i para la función '%s'. \n",aux,name);
     if (find_symbol(table, name) == -1) {
-        fprintf(stderr, "Error: Función '%s' ya declarada.\n", name);
-        return -1;  // Ya existe
+        fprintf(stderr, "Error: Function '%s' already declared.\n", name);
+        return -1;  // It already exists
     }
-    return 1;  // No existe
+    return 1;  // It does not exist
 }
 
-// Verificación de compatibilidad de tipos (en operaciones)
+// Verification of type compatibility (in operations)
 int check_types_compatibility(const char* type1, const char* type2, const char* context) {
     printf("Checking compatibility: %s vs %s in %s\n", type1, type2, context);
     if (strcmp(type1, type2) == 0) {
-        return 1;  // Tipos compatibles
+        return 1;  // Compatible types
     }
 
-    fprintf(stderr, "Error: Tipos incompatibles en %s entre '%s' y '%s'.\n", context, type1, type2);
-    return 0;  // Tipos incompatibles
+    fprintf(stderr, "Error: Incompatible types in %s between '%s' y '%s'.\n", context, type1, type2);
+    return 0;  // Incompatible types
 }
 
-// Verificar que el tipo de parámetro coincide con el tipo esperado
+// Verify that the parameter type coincides with the expected type
 int check_parameter_type(const char* expected_type, const char* actual_type) {
     if (strcmp(expected_type, actual_type) != 0) {
-        fprintf(stderr, "Error: Se esperaba '%s' pero se obtuvo '%s' como tipo de parámetro.\n", expected_type, actual_type);
+        fprintf(stderr, "Error: It was expected '%s' But it was obtained '%s' as parameter type.\n", expected_type, actual_type);
         return 0;
     }
-    return 1;  // Tipos coinciden
+    return 1;  // Types coincide
 }
 
 const char* getNodeType(ASTNode* node, SymbolTable* symbolTable) {
@@ -450,35 +450,35 @@ const char* getNodeType(ASTNode* node, SymbolTable* symbolTable) {
     switch (node->type) {
         case AST_LITERAL: {
             ASTLiteralNode* literal = (ASTLiteralNode*)node;
-	    printf("Literal encontrado: tipo=%s, valor=%s\n", literal->literalType, literal->value);
-            return literal->literalType; // Tipo del literal (e.g., "int", "string")
+	    printf("Literal found: type=%s, valor=%s\n", literal->literalType, literal->value);
+            return literal->literalType; // Type of the literal (e.g., "int", "string")
         }
         case AST_VARIABLE: {
             ASTVariableNode* var = (ASTVariableNode*)node;
             int index = find_symbol(symbolTable, var->name);
             if (index != -1) {
-                return symbolTable->symbols[index].type; // Tipo de la variable
+                return symbolTable->symbols[index].type; // Variable type
             } else {
-                fprintf(stderr, "Error: Variable '%s' no declarada.\n", var->name);
+                fprintf(stderr, "Error: Variable '%s' not declared.\n", var->name);
                 return NULL;
             }
-	    printf("Variable encontrada: nombre=%s, tipo=%s\n", var->name, symbolTable->symbols[index].type);
+	    printf("Variable found: Name=%s, type=%s\n", var->name, symbolTable->symbols[index].type);
             return symbolTable->symbols[index].type;
         }
 	case AST_BINARY_OP: {
             ASTBinaryOpNode* binOp = (ASTBinaryOpNode*)node;
-            // Se evalúan los tipos de los operandos de la operación binaria
+            // The types of operands of the binary operation are evaluated
             const char* leftType = getNodeType(binOp->left, symbolTable);
             const char* rightType = getNodeType(binOp->right, symbolTable);
             if (!leftType || !rightType) {
-                return NULL; // Si no se puede determinar alguno de los tipos, no es posible continuar
+                return NULL; // If any of the types cannot be determined, it is not possible to continue
             }
-            // Aquí se podría agregar lógica para manejar operaciones específicas
-            return leftType; // Asumimos que los dos operandos tienen el mismo tipo para simplificar
+            // Here you could add logic to handle specific operations
+            return leftType; // We assume that the two operands have the same type to simplify
         }
         case AST_UNARY_OP: {
             ASTUnaryOpNode* unaryOp = (ASTUnaryOpNode*)node;
-            // Evaluar el tipo del operando de la operación unaria
+            // Evaluate the type of operand of the Operation Unaria
             const char* operandType = getNodeType(unaryOp->operand, symbolTable);
             return operandType;
         }
@@ -486,30 +486,30 @@ const char* getNodeType(ASTNode* node, SymbolTable* symbolTable) {
             ASTFunctionCallNode* funcCall = (ASTFunctionCallNode*)node;
             int index = find_symbol(symbolTable, funcCall->functionName);
             if (index != -1) {
-                return symbolTable->symbols[index].type; // Devuelve el tipo de la función llamada
+                return symbolTable->symbols[index].type; // Returns the type of the function called
             } else {
-                fprintf(stderr, "Error: Función '%s' no declarada.\n", funcCall->functionName);
+                fprintf(stderr, "Error: Function '%s' not declared.\n", funcCall->functionName);
                 return NULL;
             }
         }
         case AST_ASSIGNMENT: {
             ASTBinaryOpNode* assignment = (ASTBinaryOpNode*)node;
-            // El tipo de la asignación es el tipo del valor en el lado derecho
+            // The type of allocation is the type of value on the right side
             return getNodeType(assignment->right, symbolTable);
         }
         case AST_BLOCK: {
             ASTBlockNode* block = (ASTBlockNode*)node;
-            // Aquí se debe manejar los tipos de las sentencias dentro del bloque, si es necesario
-            return "block"; // El tipo es un bloque de código
+            // Here you must handle the types of sentences within the block, if necessary
+            return "block"; // The type is a block of code
         }
         case AST_IF: {
             ASTIfNode* ifNode = (ASTIfNode*)node;
-            // El tipo sería determinado por la expresión condicional
+            // The type would be determined by conditional expression
             return getNodeType(ifNode->condition, symbolTable);
         }
         case AST_WHILE: {
             ASTWhileNode* whileNode = (ASTWhileNode*)node;
-            // El tipo sería determinado por la expresión condicional
+            // The type would be determined by conditional expression
             return getNodeType(whileNode->condition, symbolTable);
         }
         case AST_RETURN: {
@@ -517,53 +517,53 @@ const char* getNodeType(ASTNode* node, SymbolTable* symbolTable) {
             if (returnNode->expression) {
                 return getNodeType(returnNode->expression, symbolTable);
             }
-            return "void"; // Si no hay expresión, el tipo es void
+            return "void"; // If there is no expression, the guy is void
         }
         case AST_PRINT: {
             ASTPrintNode* printNode = (ASTPrintNode*)node;
-            // Evaluar los tipos de los argumentos
+            // Evaluate the types of arguments
             return getNodeType(printNode->arguments, symbolTable);
         }
         case AST_FUNCTION: {
             ASTFunctionNode* function = (ASTFunctionNode*)node;
-            return function->returnType; // Tipo de retorno de la función
+            return function->returnType; // Type of function return
         }
         case AST_CLASS: {
             ASTClassNode* classNode = (ASTClassNode*)node;
-            return "class"; // El tipo es "class"
+            return "class"; // The guy is "class"
         }
         case AST_MEMBER_ACCESS: {
             ASTMemberAccessNode* memberAccess = (ASTMemberAccessNode*)node;
-            return getNodeType(memberAccess->expression, symbolTable); // Tipo de la propiedad o método
+            return getNodeType(memberAccess->expression, symbolTable); // Type of property or method
         }
         case AST_METHOD_CALL: {
             ASTMethodCallNode* methodCall = (ASTMethodCallNode*)node;
-            return getNodeType(methodCall->expression, symbolTable); // Tipo del objeto que hace la llamada
+            return getNodeType(methodCall->expression, symbolTable); // Type of the object that makes the call
         }
         case AST_IDENTIFIER_LIST: {
             ASTIdentifierListNode* idList = (ASTIdentifierListNode*)node;
-            return "identifier_list"; // El tipo sería una lista de identificadores
+            return "identifier_list"; // The type would be a list of identifiers
         }
         case AST_STRING_LITERAL: {
             ASTStringLiteralNode* stringLiteral = (ASTStringLiteralNode*)node;
-            return "string"; // Literal de tipo string
+            return "string"; // String type literal
         }
         case AST_NEW: {
             ASTNewNode* newNode = (ASTNewNode*)node;
-            return newNode->className; // Tipo de objeto que se crea
+            return newNode->className; // Type of object that is created
         }
         case AST_SUPER: {
-            return "super"; // Se refiere a la clase base en una jerarquía de clases
+            return "super"; // It refers to the base class in a hierarchy of classes
         }
         case AST_TYPE_CAST: {
             ASTTypeCastNode* typeCastNode = (ASTTypeCastNode*)node;
-            return typeCastNode->typeName; // Tipo al que se convierte
+            return typeCastNode->typeName; // Type to which it becomes
         }
         case AST_THIS: {
-            return "this"; // Se refiere al objeto actual en una clase
+            return "this"; // Refers to the current object in a class
         }
         default:
-            return NULL; // No se puede determinar el tipo
+            return NULL; // The type cannot be determined
     }
 }
 
@@ -571,7 +571,7 @@ int isValidType(const char* type) {
     const char* validTypes[] = {"int", "float", "char", "void", "string"};
     for (size_t i = 0; i < sizeof(validTypes) / sizeof(validTypes[0]); i++) {
         if (strcmp(type, validTypes[i]) == 0) {
-            return 1; // Tipo válido
+            return 1; // Valid type
         }
     }
     return 0; // Tipo no válido
@@ -580,23 +580,23 @@ int isValidType(const char* type) {
 int isDefinedClass(const char* className, SymbolTable* symbolTable) {
     int index = find_symbol(symbolTable, className);
     if (index != -1 && symbolTable->symbols[index].is_class) {
-        return 1; // Es una clase definida
+        return 1; // It is a definite class
     }
-    return 0; // No está definida
+    return 0; // It is not defined
 }
 
 int areCompatibleClasses(const char* parent, const char* child, SymbolTable* symbolTable) {
-    if (strcmp(parent, child) == 0) return 1; // Mismo tipo
+    if (strcmp(parent, child) == 0) return 1; // Same type
 
     int index = find_symbol(symbolTable, child);
     while (index != -1) {
         const char* parentClass = symbolTable->symbols[index].class.parentClass;
         if (parentClass && strcmp(parentClass, parent) == 0) {
-            return 1; // Encontró un ancestro común
+            return 1; // Found a common ancestor
         }
         index = find_symbol(symbolTable, parentClass);
     }
-    return 0; // No son compatibles
+    return 0; // They are not compatible
 }
 
 int hasClassMember(const char* className, const char* memberName, SymbolTable* symbolTable) {
@@ -605,7 +605,7 @@ int hasClassMember(const char* className, const char* memberName, SymbolTable* s
 
     Symbol* classSymbol = &symbolTable->symbols[index];
 
-    // Buscar en los atributos de la clase actual
+    // Search for the attributes of the current class
     for (int i = 0; i < classSymbol->class.attr_count; i++) {
         char* attributeEntry = classSymbol->class.attributes[i];
         char* delimiter = strchr(attributeEntry, ':');
@@ -613,21 +613,21 @@ int hasClassMember(const char* className, const char* memberName, SymbolTable* s
 
         size_t nameLength = delimiter - attributeEntry;
         if (strncmp(attributeEntry, memberName, nameLength) == 0 && strlen(memberName) == nameLength) {
-            return 1; // Atributo encontrado
+            return 1; // Attribute found
         }
     }
 
-    // Buscar en los métodos de la clase actual
+    // Search in the current class methods
     for (int i = 0; i < classSymbol->class.method_count; i++) {
         if (strcmp(classSymbol->class.methods[i], memberName) == 0) {
-            return 1; // Método encontrado
+            return 1; // Method Found
         }
     }
 
-    // Si no se encuentra en la clase actual, buscar en la clase base
+    // If you are not in the current class, search the base class
     if (classSymbol->class.parentClass) {
         return hasClassMember(classSymbol->class.parentClass, memberName, symbolTable);
     }
 
-    return 0; // Miembro no encontrado
+    return 0; // Member not found
 }

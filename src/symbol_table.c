@@ -8,24 +8,24 @@ void init_symbol_table(SymbolTable* table) {
     table->symbol_count = 0;
 }
 
-// Agregar un nuevo símbolo a la tabla
+// Add a new symbol to the table
 int add_symbol(SymbolTable* table, const char* name, const char* type, bool is_function, bool is_class,
 		bool is_object, char** params, int param_count,const char* parentClass,
 		char** attributes, int attr_count, char** methods, int method_count) {
     if (table->symbol_count >= MAX_SYMBOLS) {
-        printf("Error: Tabla de símbolos llena\n");
+        printf("Error: Full symbols table\n");
         return -1;
     }
 
     if (find_symbol(table, name) != -1) {
-        printf("Error: El símbolo '%s' ya está definido\n", name);
+        printf("Error: The symbol '%s' It is already defined\n", name);
         return -2;
     }
 
     Symbol new_symbol;
     new_symbol.name = strdup(name);
     new_symbol.type = strdup(type);
-    new_symbol.defined = false;  // Inicialmente no definido
+    new_symbol.defined = false;  // Initially not defined
     new_symbol.is_function = is_function;
     new_symbol.is_class = is_class;
     new_symbol.is_object = is_object;
@@ -46,43 +46,28 @@ int add_symbol(SymbolTable* table, const char* name, const char* type, bool is_f
     return 0;
 }
 
-// Buscar un símbolo por su nombre
+// Find a symbol by name
 int find_symbol(SymbolTable* table, const char* name) {
     for (int i = 0; i < table->symbol_count; i++) {
         if (strcmp(table->symbols[i].name, name) == 0) {
-            return i; // Índice del símbolo
+            return i; // Symbol index
         }
     }
-    return -1; // No encontrado
+    return -1; // Not found
 }
 
-// Imprimir la tabla de símbolos
+// Print the symbols table
 void print_symbol_table(SymbolTable* table) {
-    /*for (int i = 0; i < table->symbol_count; i++) {
-        Symbol* sym = &table->symbols[i];
-        printf("Name: %s, Type: %s, Defined: %s", 
-               sym->name, sym->type, sym->defined ? "Yes" : "No");
-
-        if (sym->is_function) {
-            printf(", Function with %d parameters", sym->func.param_count);
-        } else if (sym->is_class) {
-            printf(", Class with %d methods and %d attributes", 
-                   sym->class.method_count, sym->class.attr_count);
-        } else if (sym->is_object) {
-            printf(", Object");
-        }
-        printf("\n");
-    }*/
     printf("------ Symbol Table ------\n");
     for (int i = 0; i < table->symbol_count; i++) {
         Symbol* sym = &table->symbols[i];
 
-        // Información general
+        // General Information
         printf("Name: %s\n", sym->name);
         printf("  Type: %s\n", sym->type);
         printf("  Defined: %s\n", sym->defined ? "Yes" : "No");
 
-        // Si es una función
+        // If it is a function
         if (sym->is_function) {
             printf("  Symbol Type: Function\n");
             printf("  Parameters (%d):\n", sym->func.param_count);
@@ -91,7 +76,7 @@ void print_symbol_table(SymbolTable* table) {
             }
         }
 
-        // Si es una clase
+        // If it is a class
         else if (sym->is_class) {
             printf("  Symbol Type: Class\n");
             printf("  Parent Class: %s\n", sym->class.parentClass ? sym->class.parentClass : "None");
@@ -105,12 +90,12 @@ void print_symbol_table(SymbolTable* table) {
             }
         }
 
-        // Si es un objeto
+        // If it is an object
         else if (sym->is_object) {
             printf("  Symbol Type: Object\n");
         }
 
-        // Separador entre símbolos
+        // Symbols separator
         printf("--------------------------\n");
     }
     printf("------ End of Table ------\n");
@@ -118,41 +103,11 @@ void print_symbol_table(SymbolTable* table) {
 
 void free_symbol_table(SymbolTable* table) {
     for (int i = 0; i < table->symbol_count; i++) {
-        free(table->symbols[i].name);  // Liberar nombre del símbolo
-        // Si usas memoria dinámica para otros campos, también libéralos aquí
+        free(table->symbols[i].name);  // Release symbol name
+        // If you use dynamic memory for other fields, also free them here
     }
-    table->symbol_count = 0;  // Resetear el contador
+    table->symbol_count = 0;  // Reset the accountant
 }
-
-/*char** extractAttributesFromClassBody(ASTNode* class_body) {
-    char** attributes = malloc(MAX_ATTRIBUTES * sizeof(char*));
-    int count = 0;
-
-    ASTNode* current = class_body;
-    while (current) {
-        printf("Procesando nodo tipo=%d en class_body\n", current->type);
-
-        if (current->type == AST_DECLARATION) {
-            ASTDeclarationNode* decl = (ASTDeclarationNode*)current;
-
-            if (!decl->name) {
-                fprintf(stderr, "Error: Nodo de declaración sin nombre encontrado.\n");
-                break; // Salir del bucle para evitar un fallo
-            }
-
-            printf("Atributo encontrado: %s\n", decl->name);
-            attributes[count++] = strdup(decl->name);
-        }
-
-        if (!current->next) {
-            printf("No hay más nodos en class_body.\n");
-        }
-
-        current = current->next;
-    }
-
-    return attributes;
-}*/
 
 char** extractAttributesFromClassBody(ASTNode* class_body) {
     char** attributes = malloc(MAX_ATTRIBUTES * sizeof(char*));
@@ -163,11 +118,11 @@ char** extractAttributesFromClassBody(ASTNode* class_body) {
         if (current->type == AST_DECLARATION) {
             ASTDeclarationNode* decl = (ASTDeclarationNode*)current;
 
-            // Crear una cadena con el formato "nombre:tipo"
+            // Create a chain with the format "Name: Type"
             char* attributeEntry = malloc(strlen(decl->name) + strlen(decl->type) + 2); // ':' y '\0'
             sprintf(attributeEntry, "%s:%s", decl->name, decl->type);
 
-            attributes[count++] = attributeEntry; // Agregar a la lista de atributos
+            attributes[count++] = attributeEntry; // Add to the attributes list
         }
         current = current->next;
     }
@@ -220,7 +175,7 @@ const char* getMemberType(const char* className, const char* memberName, SymbolT
 
     Symbol* classSymbol = &symbolTable->symbols[index];
 
-    // Buscar en los atributos de la clase actual
+    // Search for the attributes of the current class
     for (int i = 0; i < classSymbol->class.attr_count; i++) {
         char* attributeEntry = classSymbol->class.attributes[i];
         char* delimiter = strchr(attributeEntry, ':');
@@ -228,21 +183,21 @@ const char* getMemberType(const char* className, const char* memberName, SymbolT
 
         size_t nameLength = delimiter - attributeEntry;
         if (strncmp(attributeEntry, memberName, nameLength) == 0 && strlen(memberName) == nameLength) {
-            return delimiter + 1; // Devuelve el tipo después del ':'
+            return delimiter + 1; // Returns the guy after the ':'
         }
     }
 
-    // Buscar en los métodos de la clase actual
+    // Search in the current class methods
     for (int i = 0; i < classSymbol->class.method_count; i++) {
         if (strcmp(classSymbol->class.methods[i], memberName) == 0) {
-            return "function"; // Tipo predeterminado para métodos
+            return "function"; // Predetermined type for methods
         }
     }
 
-    // Si no se encuentra en la clase actual, buscar en la clase base
+    // If you are not in the current class, search the base class
     if (classSymbol->class.parentClass) {
         return getMemberType(classSymbol->class.parentClass, memberName, symbolTable);
     }
 
-    return NULL; // Miembro no encontrado
+    return NULL; // Member not found
 }

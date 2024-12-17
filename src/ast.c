@@ -3,17 +3,17 @@
 #include <stdio.h>
 #include <string.h>
 
-// Función para crear un nodo de programa
+// Function to create a program node
 ASTProgramNode* createProgramNode(ASTNode* classes, ASTNode* functions) {
     ASTProgramNode* node = (ASTProgramNode*)malloc(sizeof(ASTProgramNode));
     if (!node) {
-        fprintf(stderr, "Error: no se pudo asignar memoria para ASTProgramNode.\n");
+        fprintf(stderr, "Error: You could not assign memory for astprogramnode.\n");
         exit(EXIT_FAILURE);
     }
-    node->base.type = AST_PROGRAM; // Asigna el tipo de nodo
-    node->base.next = NULL;        // El nodo raíz no tiene siguiente
-    node->classes = classes;       // Lista de clases
-    node->functions = functions;   // Lista de funciones
+    node->base.type = AST_PROGRAM; // Assign the node type
+    node->base.next = NULL;        // The root node has no next
+    node->classes = classes;       // Class list
+    node->functions = functions;   // Function list
     return node;
 }
 
@@ -25,61 +25,61 @@ ASTClassNode* createClassNode(const char* name, const char* parent, ASTNode* mem
     }
     //node->base.next = NULL;
     node->base.type = AST_CLASS;
-    node->name = strdup(name);  // Copiar el nombre de la clase
-    node->parent = parent ? strdup(parent) : NULL;  // Si tiene clase base
-    node->members = members;    // Miembros de la clase (funciones o atributos)
+    node->name = strdup(name);  // copy the name of the class
+    node->parent = parent ? strdup(parent) : NULL;  // If you have a base class
+    node->members = members;    // class members (functions or attributes)
     return node;
 }
 
 ASTFunctionNode* createFunctionNode(const char* name, const char* returnType, ASTNode* parameters, ASTNode* body) {
     ASTFunctionNode* node = (ASTFunctionNode*)malloc(sizeof(ASTFunctionNode));
     if (!node) {
-        fprintf(stderr, "Error: no se pudo asignar memoria para ASTFunctionNode.\n");
+        fprintf(stderr, "Error: You could not assign memory for astfunctionnode.\n");
         exit(EXIT_FAILURE);
     }
-    node->base.type = AST_FUNCTION; // Asigna el tipo de nodo
-    node->name = strdup(name);      // Copia el nombre de la función
-    node->returnType = strdup(returnType); // Copia el tipo de retorno
-    node->parameters = parameters ? parameters : NULL; // Lista de parámetros
-    node->body = body;             // Cuerpo de la función
+    node->base.type = AST_FUNCTION; // Assign the node type
+    node->name = strdup(name);      // Copy the name of the function
+    node->returnType = strdup(returnType); // Copy the type of return
+    node->parameters = parameters ? parameters : NULL; // Parameter list
+    node->body = body;             // Body of the function
 
-    // Contar los parámetros
+    // Count the parameters
     int count = 0;
     ASTNode* current = parameters;
     while (current) {
         count++;
         current = current->next;
     }
-    node->param_count = count;  // Asigna el conteo de parámetros
+    node->param_count = count;  // Assign the parameter count
 
     return node;
 }
 
-// Función para crear un nodo de declaración
+// Function to create a declaration node
 ASTDeclarationNode* createDeclarationNode(const char* type, const char* name, ASTNode* init) {
     ASTDeclarationNode* node = (ASTDeclarationNode*)malloc(sizeof(ASTDeclarationNode));
     if (!node) {
         fprintf(stderr, "Error: no se pudo asignar memoria para ASTDeclarationNode.\n");
         exit(EXIT_FAILURE);
     }
-    node->base.type = AST_DECLARATION;  // Asigna el tipo de nodo
-    node->base.next = NULL;             // Sin siguiente nodo
-    node->type = strdup(type);          // Copia el tipo de la variable
-    node->name = strdup(name);          // Copia el nombre de la variable
-    node->init = init;                  // Expresión de inicialización (puede ser NULL)
+    node->base.type = AST_DECLARATION;  // Assign the node type
+    node->base.next = NULL;             // Without next node
+    node->type = strdup(type);          // Copy the type of variable
+    node->name = strdup(name);          // Copy the name of the variable
+    node->init = init;                  // Initialization expression (it can be null)
     return node;
 }
 
-// Función para crear un nodo de lista de declaraciones
+// Function to create a statement list node
 ASTDeclarationListNode* createDeclarationListNode(ASTNode* declaration, ASTNode* rest) {
     ASTDeclarationListNode* node = (ASTDeclarationListNode*)malloc(sizeof(ASTDeclarationListNode));
     if (!node) {
         fprintf(stderr, "Error: no se pudo asignar memoria para ASTDeclarationListNode.\n");
         exit(EXIT_FAILURE);
     }
-    node->base.type = AST_DECLARATION;  // Asigna el tipo de nodo
-    node->base.next = rest;             // Apunta al siguiente nodo en la lista
-    node->declaration = declaration;    // Declaración actual
+    node->base.type = AST_DECLARATION;  // Assign the node type
+    node->base.next = rest;             // Points to the next node on the list
+    node->declaration = declaration;    // Current statement
     return node;
 }
 
@@ -136,31 +136,31 @@ ASTVariableNode* createVariableNode(const char* name) {
 
 ASTNode* appendNode(ASTNode* list, ASTNode* node) {
     if (!list) {
-        return node;  // Si la lista está vacía, el nodo se convierte en la lista
+        return node;  // If the list is empty, the node becomes the list
     }
 
     ASTNode* current = list;
     while (current->next) {
-        current = current->next;  // Encuentra el último nodo de la lista
+        current = current->next;  // Find the last node on the list
     }
-    current->next = node;  // Agrega el nodo al final
+    current->next = node;  // Add the node to the end
     return list;
 }
 
-// Función para crear un nodo de bloque
+// Function to create a block node
 ASTBlockNode* createBlockNode(ASTNode* statements) {
     ASTBlockNode* node = (ASTBlockNode*)malloc(sizeof(ASTBlockNode));
     if (!node) {
         fprintf(stderr, "Error: no se pudo asignar memoria para ASTBlockNode.\n");
         exit(EXIT_FAILURE);
     }
-    node->base.type = AST_BLOCK;   // Asigna el tipo de nodo como bloque
-    node->base.next = NULL;        // Inicializa el puntero 'next' a NULL
-    node->statements = statements; // Asigna la lista de sentencias o declaraciones
+    node->base.type = AST_BLOCK;   // Assign the type of node as a block
+    node->base.next = NULL;        // Initializes the 'Next' pointer
+    node->statements = statements; // Assign the list of sentences or statements
     return node;
 }
 
-// Función para crear un nodo New
+// Function to create a new node
 ASTNewNode* createNewNode(const char* className, ASTNode* arguments) {
     ASTNewNode* node = (ASTNewNode*)malloc(sizeof(ASTNewNode));
     if (!node) {
@@ -168,12 +168,12 @@ ASTNewNode* createNewNode(const char* className, ASTNode* arguments) {
         exit(EXIT_FAILURE);
     }
     node->base.type = AST_NEW;
-    node->className = strdup(className); // Copia del nombre de la clase
-    node->arguments = arguments;        // Lista de argumentos
+    node->className = strdup(className); // Copy of the class name
+    node->arguments = arguments;        // List of Arguments
     return node;
 }
 
-// Función para crear el nodo de if
+// Function to create the IF node
 ASTIfNode* createIfNode(ASTNode* condition, ASTNode* trueBlock, ASTNode* falseBlock) {
     ASTIfNode* node = (ASTIfNode*)malloc(sizeof(ASTIfNode));
     if (!node) {
@@ -187,7 +187,7 @@ ASTIfNode* createIfNode(ASTNode* condition, ASTNode* trueBlock, ASTNode* falseBl
     return node;
 }
 
-// Función para crear el nodo de while
+// Function to create the While node
 ASTWhileNode* createWhileNode(ASTNode* condition, ASTNode* body) {
     ASTWhileNode* node = (ASTWhileNode*)malloc(sizeof(ASTWhileNode));
     if (!node) {
@@ -200,7 +200,7 @@ ASTWhileNode* createWhileNode(ASTNode* condition, ASTNode* body) {
     return node;
 }
 
-// Función para crear el nodo de return
+// Function to create the return node
 ASTReturnNode* createReturnNode(ASTNode* expression) {
     ASTReturnNode* node = (ASTReturnNode*)malloc(sizeof(ASTReturnNode));
     if (!node) {
@@ -212,7 +212,7 @@ ASTReturnNode* createReturnNode(ASTNode* expression) {
     return node;
 }
 
-// Función para crear el nodo de print
+// Function to create the print node
 ASTPrintNode* createPrintNode(ASTNode* arguments) {
     ASTPrintNode* node = (ASTPrintNode*)malloc(sizeof(ASTPrintNode));
     if (!node) {
@@ -224,7 +224,7 @@ ASTPrintNode* createPrintNode(ASTNode* arguments) {
     return node;
 }
 
-//Lectura de funcion
+//FUNCTION READING
 ASTFunctionCallNode* createFunctionCallNode(const char* functionName, ASTNode* arguments) {
     ASTFunctionCallNode* node = (ASTFunctionCallNode*)malloc(sizeof(ASTFunctionCallNode));
     if (!node) {
@@ -232,8 +232,8 @@ ASTFunctionCallNode* createFunctionCallNode(const char* functionName, ASTNode* a
         exit(EXIT_FAILURE);
     }
     node->base.type = AST_FUNCTION_CALL;
-    node->functionName = strdup(functionName); // Copia del nombre de la función
-    node->arguments = arguments;               // Lista de argumentos
+    node->functionName = strdup(functionName); // Copy of the function name
+    node->arguments = arguments;               // List of Arguments
     return node;
 }
 
@@ -246,7 +246,7 @@ ASTMemberAccessNode* createMemberAccessNode(ASTNode* expression, const char* mem
     }
     node->base.type = AST_MEMBER_ACCESS;
     node->expression = expression;
-    node->memberName = strdup(memberName);  // Copiar el nombre del miembro
+    node->memberName = strdup(memberName);  // Copy the member's name
     return node;
 }
 
@@ -258,12 +258,12 @@ ASTMethodCallNode* createMethodCallNode(ASTNode* expression, const char* methodN
     }
     node->base.type = AST_METHOD_CALL;
     node->expression = expression;
-    node->methodName = strdup(methodName);  // Copiar el nombre del método
-    node->arguments = arguments;            // Asignar los argumentos
+    node->methodName = strdup(methodName);  // Copy the name of the method
+    node->arguments = arguments;            // Assign the arguments
     return node;
 }
 
-//Función para crear lista de identificadores
+//Function to create identifiers list
 
 ASTNode* createIdentifierListNode(ASTNode* first, ASTNode* second) {
     ASTIdentifierListNode* node = (ASTIdentifierListNode*)malloc(sizeof(ASTIdentifierListNode));
@@ -272,9 +272,9 @@ ASTNode* createIdentifierListNode(ASTNode* first, ASTNode* second) {
         exit(EXIT_FAILURE);
     }
     node->base.type = AST_IDENTIFIER_LIST;
-    node->identifiers = first;  // El primer identificador
+    node->identifiers = first;  // The first identifier
     if (second) {
-        // Si hay un segundo identificador, lo agregamos a la lista
+        // If there is a second identifier, we add it to the list
         ASTNode* temp = first;
         while (temp->next) {
             temp = temp->next;
@@ -306,7 +306,7 @@ ASTNode* createSuperNode() {
     return (ASTNode*)node;
 }
 
-//Cast tipo
+//castTipo
 ASTTypeCastNode* createTypeCastNode(const char* typeName, ASTNode* expression) {
     ASTTypeCastNode* node = (ASTTypeCastNode*)malloc(sizeof(ASTTypeCastNode));
     if (!node) {
@@ -314,8 +314,8 @@ ASTTypeCastNode* createTypeCastNode(const char* typeName, ASTNode* expression) {
         exit(EXIT_FAILURE);
     }
     node->base.type = AST_TYPE_CAST;
-    node->typeName = strdup(typeName);  // Copia el nombre del tipo
-    node->expression = expression;     // La expresión a convertir
+    node->typeName = strdup(typeName);  // Copy the name of the type
+    node->expression = expression;     // The expression to convert
     return node;
 }
 
@@ -326,9 +326,9 @@ ASTFunctionCallNode* createFunctionCallWithContextNode(ASTNode* context, ASTNode
         exit(EXIT_FAILURE);
     }
     node->base.type = AST_FUNCTION_CALL;
-    node->context = context;     // Nodo antes del paréntesis (contexto)
-    node->functionName = NULL;   // Esto puede ser NULL si solo usamos contexto
-    node->arguments = arguments; // Lista de argumentos
+    node->context = context;     // Node before parentheses (context)
+    node->functionName = NULL;   // This can be null if we only use context
+    node->arguments = arguments; // List of Arguments
     return node;
 }
 
@@ -338,7 +338,6 @@ ASTThisNode* createThisNode() {
         fprintf(stderr, "Error: no se pudo asignar memoria para ASTThisNode.\n");
         exit(EXIT_FAILURE);
     }
-    node->base.type = AST_THIS;  // Asegúrate de tener un tipo AST_THIS
+    node->base.type = AST_THIS;  // Be sure to have an Ast_This type
     return node;
 }
-

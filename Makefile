@@ -1,8 +1,8 @@
-# Compilador y opciones
+# Compiler and options
 CC = gcc
 CFLAGS = -Wall -Wextra -g
 
-# Archivos principales
+# Main files
 EXEC = vypcomp
 SRC = src
 LEXER_SRC = $(SRC)/lexer.l
@@ -12,47 +12,47 @@ AST_SRC = $(SRC)/ast.c
 SYMBOL_TABLE_SRC = $(SRC)/symbol_table.c
 SEMANTIC_SRC = $(SRC)/semantic_analysis.c
 
-# Archivos generados
+# Generated files
 LEXER_GEN = $(SRC)/lexer.c
 PARSER_GEN = $(SRC)/parser.c
 PARSER_HEADER = $(SRC)/parser.h
 
-# Objetos
+# Objects
 OBJS = parser.o lexer.o main.o ast.o symbol_table.o semantic_analysis.o
 
-# Regla principal
+# Main rule
 $(EXEC): $(OBJS)
 	$(CC) $(CFLAGS) -o $(EXEC) $(OBJS) -lfl
 
-# Objeto para el parser
+# Object for the parser
 parser.o: $(PARSER_GEN) $(PARSER_HEADER) $(SRC)/ast.h $(SRC)/symbol_table.h
 	$(CC) $(CFLAGS) -c -o parser.o $(PARSER_GEN)
 
-# Objeto para el lexer
+# Object for the lexer
 lexer.o: $(LEXER_GEN) $(PARSER_HEADER) $(SRC)/ast.h
 	flex -o $(LEXER_GEN) $(LEXER_SRC)
 	$(CC) $(CFLAGS) -c -o lexer.o $(LEXER_GEN)
 
-# Objeto para el archivo principal
+# Object for the main file
 main.o: $(MAIN_SRC) $(SRC)/ast.h $(SRC)/symbol_table.h $(SRC)/semantic_analysis.h
 	$(CC) $(CFLAGS) -c -o main.o $(MAIN_SRC)
 
-# Objeto para el AST
+# Object for AST
 ast.o: $(AST_SRC) $(SRC)/ast.h
 	$(CC) $(CFLAGS) -c -o ast.o $(AST_SRC)
 
-# Objeto para la tabla de símbolos
+# Object for the symbols table
 symbol_table.o: $(SYMBOL_TABLE_SRC) $(SRC)/symbol_table.h
 	$(CC) $(CFLAGS) -c -o symbol_table.o $(SYMBOL_TABLE_SRC)
 
-# Objeto para el análisis semántico
+# Object for semantic analysis
 semantic_analysis.o: $(SEMANTIC_SRC) $(SRC)/semantic_analysis.h $(SRC)/symbol_table.h
 	$(CC) $(CFLAGS) -c -o semantic_analysis.o $(SEMANTIC_SRC)
 
-# Generación del parser
+# PARSER GENERATION
 $(PARSER_GEN) $(PARSER_HEADER): $(PARSER_SRC)
 	bison -d -o $(PARSER_GEN) $(PARSER_SRC)
 
-# Limpieza
+# Cleaning
 clean:
 	rm -f $(EXEC) $(LEXER_GEN) $(PARSER_GEN) $(PARSER_HEADER) $(OBJS)

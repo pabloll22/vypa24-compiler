@@ -87,12 +87,7 @@ class_definition:
     CLASS IDENTIFIER ':' IDENTIFIER '{' class_body '}' {
         // Añadir la clase a la tabla de símbolos
         if (find_symbol(&symbol_table, $2) == -1) {
-	    /*if (!$6) {
-                fprintf(stderr, "Error: class_body está vacío o no se ha generado correctamente.\n");
-                $$ = NULL;
-                return;
-            }*/
-	    printf("Procesando class_body para la clase '%s': nodo inicial tipo=%d\n", $2, $6->type);
+	    printf("Processing class_body for class '%s': initial node type=%d\n", $2, $6->type);
 
 	    //Crear la clase y registrar en la tabla de símbolos
             char** attributes = extractAttributesFromClassBody($6); // Extrae atributos del cuerpo
@@ -103,7 +98,7 @@ class_definition:
 
             // Indicamos que este es un símbolo de tipo "clase"
             add_symbol(&symbol_table, $2, "class", false, true, false, NULL, 0, $4, attributes, attr_count, methods, method_count);  // $2 es el nombre de la clase
-            // Ahora procesamos los miembros de la clase (atributos y métodos)
+            // Now we process class members (attributes and methods)
             $$ = (ASTNode*)createClassNode($2, $4, $6);  // Crear nodo de clase con herencia
 //	    program.classes = appendNode(program.classes, $$);  // Agrega la clase al programa
         } else {
@@ -112,7 +107,7 @@ class_definition:
         }
     }
     | CLASS IDENTIFIER '{' class_body '}' {
-        // Añadir la clase a la tabla de símbolos sin herencia
+        // Add the class to the symbols table without inheritance
         if (find_symbol(&symbol_table, $2) == -1) {
 	    char** attributes = extractAttributesFromClassBody($4);
             char** methods = extractMethodsFromClassBody($4);
@@ -153,7 +148,7 @@ function_definitions:
     function_definitions function_definition {
         $$ = (ASTNode*)appendNode($1, $2);  // Combina la lista de funciones con una nueva función
 
-        // Verificar si la función ya está en la tabla de símbolos
+        // Verify if the function is already in the symbols table
         ASTFunctionNode* funcNode = (ASTFunctionNode*)$2;
         if (find_symbol(&symbol_table, funcNode->name) == -1) {
             printf("Adding function: %s\n", funcNode->name);
@@ -164,11 +159,11 @@ function_definitions:
         }
     }
     | function_definition {
-        $$ = $1;  // La lista inicial es simplemente el primer nodo
+        $$ = $1;  // The initial list is simply the first node
         ASTFunctionNode* funcNode = (ASTFunctionNode*)$1;
         if (find_symbol(&symbol_table, funcNode->name) == -1) {
             printf("Adding function: %s\n", funcNode->name);
-            // Agregar la función a la tabla de símbolos
+            // Add the function to the symbols table
             add_symbol(&symbol_table, funcNode->name, funcNode->returnType, true, false, false, funcNode->parameters, funcNode->param_count, NULL, NULL, 0, NULL, 0);
         } else {
             yyerror("Function already declared");
@@ -179,9 +174,9 @@ function_definitions:
 
 function_definition:
     type IDENTIFIER '(' parameter_list ')' block {
-        // Crear el nodo de la función
+        // Create the function node
         $$ = (ASTNode*)createFunctionNode($2, $1, $4, $6);  // Crear nodo de función
-        // Contar el número de parámetros
+        // Count the parameter number
 	printf("Parameters: ");
         int param_count = 0;
         ASTNode* param_node = $4;
@@ -193,13 +188,13 @@ function_definition:
         // Verificar si la función ya está en la tabla de símbolos
         int found = find_symbol(&symbol_table, $2);  // Buscar la función por su nombre
         if (found == -1) {
-            // Si la función no está declarada, agregarla a la tabla de símbolos
+            // If the function is not declared, add it to the symbols table
             printf("Adding function: %s with %d parameters\n", $2, param_count);
             add_symbol(&symbol_table, $2, $1, true, false, false, $4, param_count, NULL, NULL, 0, NULL, 0);  // Agregar función a la tabla de símbolos
         } else {
-            // Si la función ya está declarada, reportar un error
+            // If the function is already declared, report an error
             yyerror("Function already declared");
-            $$ = NULL;  // Indicar que la función no se debe agregar al árbol
+            $$ = NULL;  // Indicate that the function should not be added to the tree
         }
     }
 ;
@@ -207,69 +202,69 @@ function_definition:
 
 parameter_list:
     /* vacío */ {
-        $$ = NULL; // Sin parámetros, la lista será NULL
+        $$ = NULL; // No parameters, the list will be null
     }
     |VOID {
-        $$ = $1; // Lista de parámetros
+        $$ = $1; // Parameter list
     }
     | parameter_declaration_list {
-        $$ = $1; // Lista de parámetros
+        $$ = $1; // Parameter list
     }
 ;
 
 parameter_declaration_list:
     parameter_declaration {
-        $$ = $1; // Un único parámetro
+        $$ = $1; // A single parameter
     }
     | parameter_declaration_list ',' parameter_declaration {
-        $$ = (ASTNode*)appendNode($1, $3); // Lista de parámetros combinada
+        $$ = (ASTNode*)appendNode($1, $3); // Combined parameter list
     }
 ;
 
 parameter_declaration:
     type IDENTIFIER {
         printf("Creating parameter: type=%s, name=%s\n", $1, $2);
-        // Añadir el parámetro a la tabla de símbolos
+        // Add the parameter to the symbols table
         if (find_symbol(&symbol_table, $2) == -1) {
             add_symbol(&symbol_table, $2, $1, false, false, false, NULL, 0, NULL, NULL, 0, NULL, 0);  // Añadir parámetro a la tabla
             $$ = (ASTNode*)createDeclarationNode($1, $2, NULL);  // Crear nodo de parámetro sin inicialización
         } else {
             yyerror("Parameter already declared");
-            $$ = NULL;  // Indicar que el parámetro no debe ser añadido
+            $$ = NULL;  // Indicate that the parameter should not be added
         }
     }
 ;
 
 
-// Declaraciones
+// Statements
 declaration:
     |type IDENTIFIER ';' {
         printf("Creating declaration: type=%s, name=%s\n", $1, $2);
 
-        // Verificar si la variable ya está declarada
+        // Verify if the variable is already declared
         int found = find_symbol(&symbol_table, $2);
         if (found == -1) {
             printf("Symbol not found, adding: %s\n", $2);
-            // Si la variable no está declarada, agregarla a la tabla de símbolos
+            // If the variable is not declared, add it to the symbols table
             add_symbol(&symbol_table, $2, $1, false, false, false, NULL, 0, NULL, NULL, 0, NULL, 0);  // Agregar variable
             $$ = (ASTNode*)createDeclarationNode($1, $2, NULL);  // Crear nodo de declaración sin inicialización
         } else {
-            // Si la variable ya está declarada, reportar un error
+            // If the variable is already declared, report an error
             yyerror("Variable already declared");
             $$ = NULL;
         }
     }
     | type IDENTIFIER '=' expression ';' {
 	printf("Creating declaration with initialization: type=%s, name=%s\n", $1, $2);
-        // Verificar si la variable ya está declarada
+        // Verify if the variable is already declared
         int found = find_symbol(&symbol_table, $2);
         if (found == -1) {
             printf("Symbol not found, adding: %s\n", $2);
-            // Si la variable no está declarada, agregarla a la tabla de símbolos
+            // If the variable is not declared, add it to the symbols table
             add_symbol(&symbol_table, $2, $1, false, false, false, NULL, 0, NULL, NULL, 0, NULL, 0);  // Agregar variable
             $$ = (ASTNode*)createDeclarationNode($1, $2, $4);  // Crear nodo de declaración con inicialización
         } else {
-            // Si la variable ya está declarada, reportar un error
+            // If the variable is already declared, report an error
             yyerror("Variable already declared");
             $$ = NULL;
         }
@@ -282,11 +277,11 @@ declaration:
 
 IDENTIFIER_LIST:
     IDENTIFIER {
-        // Crear un nodo para el identificador y asignarlo a $$.
+        // Create a node for the identifier and assign it to $$.
         $$ = (ASTNode*)createVariableNode($1);
     }
     | IDENTIFIER_LIST ',' IDENTIFIER {
-        // Crear un nodo para la lista y agregar el nuevo identificador.
+        // Create a node for the list and add the new identifier.
         $$ = (ASTNode*)createIdentifierListNode($1, (ASTNode*)createVariableNode($3));
     }
 ;
@@ -294,17 +289,17 @@ IDENTIFIER_LIST:
 type:
     simple_type {
 	printf("Parsed simple_type: %s\n", $1);
-        $$ = $1; // Pasar directamente el valor del tipo
+        $$ = $1; // Pass the type value directly
     }
     | user_type {
 	printf("Parsed user_type: %s\n", $1);
-        $$ = $1; // Pasar el nombre del tipo de usuario
+        $$ = $1; // Pass the name of the user type
     }
 ;
 
 simple_type:
     INT {
-        $$ = $1; // "int", "string" o "void" ya están definidos en el lexer
+        $$ = $1; // "int", "string" or "void" are already defined in the lexer
     }
     | STRING {
         $$ = $1;
@@ -316,66 +311,66 @@ simple_type:
 
 user_type:
     IDENTIFIER {
-        $$ = $1; // El identificador de la clase o tipo definido por el usuario
+        $$ = $1; // User -defined class or type identifier
     }
 ;
 
 
-// Bloques de código
+// Code blocks
 block:
     '{' declaration_or_statement_list '}' {
-        $$ = (ASTNode*)createBlockNode($2); // Crear un nodo de bloque con la lista de declaraciones o sentencias
+        $$ = (ASTNode*)createBlockNode($2); // Create a block node with the list of statements or sentences
     }
 ;
 
 declaration_or_statement_list:
     /* vacío */ {
-        $$ = NULL;  // Si la lista está vacía, el valor de $$ es NULL
+        $$ = NULL;  // If the list is empty, the $$ value is null
     }
     | declaration_or_statement {
-        $$ = $1;  // Si hay solo una declaración o sentencia, simplemente pasa ese nodo
+        $$ = $1;  // If there is only one statement or sentence, that node simply passes
     }
     | declaration_or_statement_list declaration_or_statement {
-        $$ = (ASTNode*)appendNode($1, $2);  // Si hay múltiples declaraciones o sentencias, las agregamos
+        $$ = (ASTNode*)appendNode($1, $2);  // If there are multiple statements or sentences, we add them
     }
 ;
 
 
 declaration_or_statement:
     declaration {
-        $$ = $1;  // Si es una declaración, asignamos el nodo de declaración
+        $$ = $1;  // If it is a statement, we assign the declaration node
     }
     | statement {
-        $$ = $1;  // Si es una sentencia, asignamos el nodo de la sentencia
+        $$ = $1;  // If it is a sentence, we assign the node of the sentence
     }
 ;
 
 
-// Sentencias
+// Sentences
 statement:
     IF '(' expression ')' block ELSE block {
-        $$ = (ASTNode*)createIfNode($3, $5, $7);  // Crear nodo de 'if' con la condición y los bloques
+        $$ = (ASTNode*)createIfNode($3, $5, $7);  // Create 'if' node with the condition and blocks
     }
     | IF '(' expression ')' block {
-        $$ = (ASTNode*)createIfNode($3, $5, NULL);  // Crear nodo de 'if' sin bloque 'else'
+        $$ = (ASTNode*)createIfNode($3, $5, NULL);  // Create 'if' node without block 'else'
     }
     | WHILE '(' expression ')' block {
-        $$ = (ASTNode*)createWhileNode($3, $5);  // Crear nodo de 'while' con la condición y el bloque
+        $$ = (ASTNode*)createWhileNode($3, $5);  // Create 'While' node with the condition and block
     }
     | RETURN expression ';' {
-        $$ = (ASTNode*)createReturnNode($2);  // Crear nodo de 'return' con la expresión
+        $$ = (ASTNode*)createReturnNode($2);  // Create 'return' node with expression
     }
     | PRINT '(' print_arguments ')' ';' {
-        $$ = (ASTNode*)createPrintNode($3);  // Crear nodo de 'print' con los argumentos
+        $$ = (ASTNode*)createPrintNode($3);  // Create 'print' node with arguments
     }
     | IDENTIFIER '=' expression ';' {
-        $$ = (ASTNode*)createBinaryOpNode(OP_ASSIGN,createVariableNode($1), $3);  // Crear nodo de asignación
+        $$ = (ASTNode*)createBinaryOpNode(OP_ASSIGN,createVariableNode($1), $3);  // Create allocation node
     }
     | block {
-	$$ = $1;  // El bloque es una lista de sentencias
+	$$ = $1;  // The block is a list of sentences
     }
     | ';' {
-        $$ = NULL; // Sentencia vacía
+        $$ = NULL; // Empty sentence
     }
     |IDENTIFIER '.' IDENTIFIER '=' expression ';' {
         printf("Parsing: %s.%s = ...\n", $1, $3);  // Depuración
@@ -387,16 +382,16 @@ statement:
 
 print_arguments:
     STRING_LITERAL { 
-        $$ = (ASTNode*)createLiteralNode($1, "string");  // Crear nodo de literal de cadena
+        $$ = (ASTNode*)createLiteralNode($1, "string");  // Create chain literal node
     }
     | expression { 
-        $$ = $1;  // El argumento es una expresión
+        $$ = $1;  // The argument is an expression
     }
     | print_arguments ',' STRING_LITERAL {
-        $$ = (ASTNode*)appendNode($1, (ASTNode*)createLiteralNode($3, "string"));  // Agregar literal a la lista de argumentos
+        $$ = (ASTNode*)appendNode($1, (ASTNode*)createLiteralNode($3, "string"));  // Add literal to the list of arguments
     }
     | print_arguments ',' expression {
-        $$ = (ASTNode*)appendNode($1, $3);  // Agregar expresión a la lista de argumentos
+        $$ = (ASTNode*)appendNode($1, $3);  // Add expression to the list of arguments
     }
 ;
 
@@ -416,12 +411,11 @@ expression:
         printf("Creating variable node: %s\n", $1);
         $$ = (ASTNode*)createVariableNode($1);
   }
-  | expression '.' IDENTIFIER  /* Acceso a atributo o método */ {
-        // Acceso a atributo o método
+  | expression '.' IDENTIFIER {
+        // Access to attribute or method
         $$ = (ASTNode*)createMemberAccessNode($1, $3);
   }
-  | expression '.' IDENTIFIER '(' argument_list ')'  /* Llamada a método */ {
-        // Llamada a método
+  | expression '.' IDENTIFIER '(' argument_list ')'  / * Method call */ {
         $$ = (ASTNode*)createMethodCallNode($1, $3, $5);
   }
   | IDENTIFIER '.' IDENTIFIER '=' expression ';' {
@@ -429,95 +423,95 @@ expression:
                                        (ASTNode*)createMemberAccessNode(createVariableNode($1), $3),
                                        $5);
   }
-  | IDENTIFIER '.' IDENTIFIER /* Acceso a atributo */ {
-        // Acceso a atributo
+  | IDENTIFIER '.' IDENTIFIER / * Access to attribute */ {
+        // Access to attribute
         $$ = (ASTNode*)createMemberAccessNode(createVariableNode($1), $3);
   }
-  | IDENTIFIER '.' IDENTIFIER '(' argument_list ')'  /* Llamada a método */ {
+  | IDENTIFIER '.' IDENTIFIER '(' argument_list ')'  /* Method call */ {
         // Llamada a método
         $$ = (ASTNode*)createMethodCallNode(createVariableNode($1), $3, $5);
   }
-  | SUPER '.' IDENTIFIER '(' argument_list ')'  /* Llamada a método desde super */ {
-        // Llamada a método desde super
+  | SUPER '.' IDENTIFIER '(' argument_list ')'{
+        // Method call from Super
         $$ = (ASTNode*)createMethodCallNode(createSuperNode(), $3, $5);
   }
   | NEW IDENTIFIER '(' argument_list ')'  /* Constructor */ {
-        $$ = (ASTNode*)createNewNode($2, $4); // Nodo para 'new IDENTIFIER()'
+        $$ = (ASTNode*)createNewNode($2, $4); // Node for 'new IDENTIFIER()'
   }
   | NEW IDENTIFIER  /* Instancia sin argumentos */ {
-        $$ = (ASTNode*)createNewNode($2, NULL); // Nodo para 'new IDENTIFIER'
+        $$ = (ASTNode*)createNewNode($2, NULL); // Node for 'new IDENTIFIER'
   }
   | THIS '.' IDENTIFIER  /* Acceso a atributo/método de la clase */ {
-    $$ = (ASTNode*)createMemberAccessNode(createThisNode(), $3);  // Nodo para acceso a atributo/método desde 'this'
+    $$ = (ASTNode*)createMemberAccessNode(createThisNode(), $3);  // Node for access to attribute/method from 'this'
   }
   | THIS '.' IDENTIFIER '(' argument_list ')' {
-    $$ = (ASTNode*)createMethodCallNode(createThisNode(), $3, $5);  // Nodo para llamada a método desde 'this'
+    $$ = (ASTNode*)createMethodCallNode(createThisNode(), $3, $5);  // Node for call to method from 'this'
   }
   | expression '(' argument_list ')'  /* Llamada a función */ {
-      $$ = (ASTNode*)createFunctionCallWithContextNode($1, $3);  // Nodo con contexto
+      $$ = (ASTNode*)createFunctionCallWithContextNode($1, $3);  // Node with context
   }
   | IDENTIFIER '(' argument_list ')'  /* Llamada a función */ {
 	if (strcmp($1, "subStr") == 0) {
 		printf("Creating subStr function call\n");
-        	$$ = createFunctionCallNode($1, $3);  // Llamada a subStr con sus argumentos
+        	$$ = createFunctionCallNode($1, $3);  // Subr call with your arguments
         } else {
 		printf("Creating general function call\n");
-        	$$ = (ASTNode*)createFunctionCallNode($1, $3);  // Llamada a función en general
+        	$$ = (ASTNode*)createFunctionCallNode($1, $3);  // CALL TO GENERAL FUNCTION
         }
   }
   | READ_INT '(' ')'  /* Leer entero */{
 	printf("Adding predefined function: readInt\n");
-        char* readIntParams[] = {NULL};  // Sin parámetros
+        char* readIntParams[] = {NULL};  // No parameters
         add_symbol(&symbol_table, "readInt", "int", true, false, false, readIntParams, 0, NULL, NULL, 0, NULL, 0);
-        $$ = (ASTNode*)createFunctionCallNode("readInt", NULL);  // Crear nodo para la llamada a readInt()
+        $$ = (ASTNode*)createFunctionCallNode("readInt", NULL);  // Create node for call to readInt()
   }
   | READ_STRING '(' ')'  /* Leer string */ {
-        $$ = createFunctionCallNode("readString", NULL); // Llamada a la función readString sin argumentos
+        $$ = createFunctionCallNode("readString", NULL); // Call to Readstring function without arguments
   }
-  | '(' expression ')'  /* Expresión entre paréntesis */ {
-        $$ = $2;  // Simplemente devolver la expresión dentro de los paréntesis
+  | '(' expression ')'  /* Expression in parentheses */ {
+        $$ = $2;  // Simply return the expression within parentheses
   }
-  | '(' type ')' expression  /* Conversión de tipo */ {
+  | '(' type ')' expression  /* Type conversion */ {
       printf("Creating type cast: (%s)\n", $2);
         $$ = (ASTNode*)createTypeCastNode($2, $4);
   }
   | expression '+' expression  {
-        $$ = (ASTNode*)createBinaryOpNode(OP_ADD, $1, $3);  // Suma
+        $$ = (ASTNode*)createBinaryOpNode(OP_ADD, $1, $3);  // Addition
   }
   | expression '-' expression  {
-        $$ = (ASTNode*)createBinaryOpNode(OP_SUB, $1, $3);  // Resta
+        $$ = (ASTNode*)createBinaryOpNode(OP_SUB, $1, $3);  // Subtraction
   }
   | expression '*' expression  {
-        $$ = (ASTNode*)createBinaryOpNode(OP_MUL, $1, $3);  // Multiplicación
+        $$ = (ASTNode*)createBinaryOpNode(OP_MUL, $1, $3);  // Multiplication
   }
   | expression '/' expression  {
-        $$ = (ASTNode*)createBinaryOpNode(OP_DIV, $1, $3);  // División
+        $$ = (ASTNode*)createBinaryOpNode(OP_DIV, $1, $3);  // Division
   }
   | expression '<' expression {
-        $$ = (ASTNode*)createBinaryOpNode(OP_LT, $1, $3);  // Menor que
+        $$ = (ASTNode*)createBinaryOpNode(OP_LT, $1, $3);  // Minor than
   }
   | expression '>' expression {
-        $$ = (ASTNode*)createBinaryOpNode(OP_GT, $1, $3);  // Mayor que
+        $$ = (ASTNode*)createBinaryOpNode(OP_GT, $1, $3);  // Greater than
   }
   | expression LE expression {
-        $$ = (ASTNode*)createBinaryOpNode(OP_LE, $1, $3);  // Menor o igual que
+        $$ = (ASTNode*)createBinaryOpNode(OP_LE, $1, $3);  // Smaller the equal
   }
   | expression GE expression {
-        $$ = (ASTNode*)createBinaryOpNode(OP_GE, $1, $3);  // Mayor o igual que
+        $$ = (ASTNode*)createBinaryOpNode(OP_GE, $1, $3);  // Greater than or equal
   }
   | expression EQ expression {
-        $$ = (ASTNode*)createBinaryOpNode(OP_EQ, $1, $3);  // Igual que
+        $$ = (ASTNode*)createBinaryOpNode(OP_EQ, $1, $3);  // Just like
   }
   | expression NE expression {
-        $$ = (ASTNode*)createBinaryOpNode(OP_NE, $1, $3);  // Diferente que
+        $$ = (ASTNode*)createBinaryOpNode(OP_NE, $1, $3);  // Unlike
   }
-  /*| subStr(expression, expression, expression) {  // Regla para subStr
+  /*| subStr(expression, expression, expression) {  // Rule for subStr
         $$ = (ASTNode*)createFunctionCallNode("subStr", $3);
   }*/
 ;
 
 argument_list:
-    /* vacío */  { $$ = NULL; }
+    /* empty */  { $$ = NULL; }
     | expression { $$ = $1; }
     | argument_list ',' expression { $$ = appendNode($1, $3); }
 ;
@@ -525,7 +519,7 @@ argument_list:
 
 %%
 
-// Función para manejar errores
+// Function to handle errors
 void yyerror(const char* msg) {
     fprintf(stderr, "Error: %s\n", msg);
 }
