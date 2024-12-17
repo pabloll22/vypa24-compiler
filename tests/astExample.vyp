@@ -1,0 +1,16 @@
+class MyClass {
+    int x;
+    void MyClass() { x = 10; }
+}
+
+void main(void) {
+    MyClass obj;
+    obj = new MyClass();
+}
+/*class MyClass {
+    int x;
+    int y;
+}*/
+
+
+

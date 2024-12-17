@@ -1,0 +1,9 @@
+void main() {
+  int a;
+  a = 5; //QLQLQLQLLQ
+  if (a < 10) {
+    print("Menor que 10");
+  }else{
+    print("Mayor que 10");
+  }
+}

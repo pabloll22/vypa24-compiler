@@ -1,0 +1,12 @@
+class Shape{
+  int id;
+  void Shape() { print("constructor of Shape"); }
+  string toString() { return "instance of Shape " + (string)(this.id); }
+}
+
+class Rectangle : Shape {
+  int height, width;
+  string toString() { return super.toString()
+                             + " - rectangle " + (string)(this.area()); }
+  int area() { return this.height * this.width; }
+}

@@ -23,6 +23,7 @@ ASTClassNode* createClassNode(const char* name, const char* parent, ASTNode* mem
         fprintf(stderr, "Error: no se pudo asignar memoria para ASTClassNode.\n");
         exit(EXIT_FAILURE);
     }
+    //node->base.next = NULL;
     node->base.type = AST_CLASS;
     node->name = strdup(name);  // Copiar el nombre de la clase
     node->parent = parent ? strdup(parent) : NULL;  // Si tiene clase base
@@ -41,6 +42,16 @@ ASTFunctionNode* createFunctionNode(const char* name, const char* returnType, AS
     node->returnType = strdup(returnType); // Copia el tipo de retorno
     node->parameters = parameters ? parameters : NULL; // Lista de parámetros
     node->body = body;             // Cuerpo de la función
+
+    // Contar los parámetros
+    int count = 0;
+    ASTNode* current = parameters;
+    while (current) {
+        count++;
+        current = current->next;
+    }
+    node->param_count = count;  // Asigna el conteo de parámetros
+
     return node;
 }
 
@@ -330,3 +341,4 @@ ASTThisNode* createThisNode() {
     node->base.type = AST_THIS;  // Asegúrate de tener un tipo AST_THIS
     return node;
 }
+

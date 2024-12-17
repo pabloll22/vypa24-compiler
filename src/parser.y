@@ -1,4 +1,5 @@
 %{
+#include "semantic_analysis.h"
 #include "symbol_table.h"
 #include "ast.h"
 #include <stdio.h>
@@ -74,18 +75,37 @@ program:
 ;
 
 class_definitions:
-    class_definitions class_definition
-    | class_definition
+    class_definitions class_definition {
+        $$ = (ASTNode*)appendNode($1, $2);  // Agrega la clase actual a la lista
+    }
+    | class_definition {
+        $$ = $1;  // Primera clase en la lista
+    }
 ;
 
 class_definition:
     CLASS IDENTIFIER ':' IDENTIFIER '{' class_body '}' {
         // Añadir la clase a la tabla de símbolos
         if (find_symbol(&symbol_table, $2) == -1) {
+	    /*if (!$6) {
+                fprintf(stderr, "Error: class_body está vacío o no se ha generado correctamente.\n");
+                $$ = NULL;
+                return;
+            }*/
+	    printf("Procesando class_body para la clase '%s': nodo inicial tipo=%d\n", $2, $6->type);
+
+	    //Crear la clase y registrar en la tabla de símbolos
+            char** attributes = extractAttributesFromClassBody($6); // Extrae atributos del cuerpo
+            char** methods = extractMethodsFromClassBody($6);       // Extrae métodos del cuerpo
+
+            int attr_count = countAttributes($6); // Cuenta atributos
+            int method_count = countMethods($6);  // Cuenta métodos
+
             // Indicamos que este es un símbolo de tipo "clase"
-            add_symbol(&symbol_table, $2, "class", false, true, false, NULL, 0);  // $2 es el nombre de la clase
+            add_symbol(&symbol_table, $2, "class", false, true, false, NULL, 0, $4, attributes, attr_count, methods, method_count);  // $2 es el nombre de la clase
             // Ahora procesamos los miembros de la clase (atributos y métodos)
             $$ = (ASTNode*)createClassNode($2, $4, $6);  // Crear nodo de clase con herencia
+//	    program.classes = appendNode(program.classes, $$);  // Agrega la clase al programa
         } else {
             yyerror("Class already declared");  // Error si la clase ya está declarada
             $$ = NULL;
@@ -94,7 +114,12 @@ class_definition:
     | CLASS IDENTIFIER '{' class_body '}' {
         // Añadir la clase a la tabla de símbolos sin herencia
         if (find_symbol(&symbol_table, $2) == -1) {
-            add_symbol(&symbol_table, $2, "class", false, true, false, NULL, 0);  // $2 es el nombre de la clase
+	    char** attributes = extractAttributesFromClassBody($4);
+            char** methods = extractMethodsFromClassBody($4);
+            int attr_count = countAttributes($4);
+            int method_count = countMethods($4);
+
+            add_symbol(&symbol_table, $2, "class", false, true, false, NULL, 0, NULL, attributes, attr_count, methods, method_count);  // $2 es el nombre de la clase
             $$ = (ASTNode*)createClassNode($2, NULL, $4);  // Crear nodo de clase sin clase base
         } else {
             yyerror("Class already declared");
@@ -105,10 +130,13 @@ class_definition:
 
 class_body:
     /* vacío */{
-        $$ = NULL;
+	$$ = NULL;
     }
     | class_body class_member {
         $$ = (ASTNode*)appendNode($1, $2);  // Agregar el nuevo miembro al cuerpo de la clase
+    }
+    |class_member{
+	$$ = $1; // Primera declaración o método en la lista
     }
 ;
 
@@ -129,8 +157,8 @@ function_definitions:
         ASTFunctionNode* funcNode = (ASTFunctionNode*)$2;
         if (find_symbol(&symbol_table, funcNode->name) == -1) {
             printf("Adding function: %s\n", funcNode->name);
-                    // Agregar la función a la tabla de símbolos
-            add_symbol(&symbol_table, funcNode->name, funcNode->returnType, true, false, false, NULL, 0);  // Parámetros NULL por ahora
+	            // Agregar la función a la tabla de símbolos
+            add_symbol(&symbol_table, funcNode->name, funcNode->returnType, true, false, false, funcNode->parameters, funcNode->param_count, NULL, NULL, 0, NULL, 0);  // Parámetros NULL por ahora
         } else {
             yyerror("Function already declared");
         }
@@ -141,7 +169,7 @@ function_definitions:
         if (find_symbol(&symbol_table, funcNode->name) == -1) {
             printf("Adding function: %s\n", funcNode->name);
             // Agregar la función a la tabla de símbolos
-            add_symbol(&symbol_table, funcNode->name, funcNode->returnType, true, false, false, NULL, 0);  // Parámetros NULL por ahora
+            add_symbol(&symbol_table, funcNode->name, funcNode->returnType, true, false, false, funcNode->parameters, funcNode->param_count, NULL, NULL, 0, NULL, 0);
         } else {
             yyerror("Function already declared");
         }
@@ -154,7 +182,7 @@ function_definition:
         // Crear el nodo de la función
         $$ = (ASTNode*)createFunctionNode($2, $1, $4, $6);  // Crear nodo de función
         // Contar el número de parámetros
-        printf("Parameters: ");
+	printf("Parameters: ");
         int param_count = 0;
         ASTNode* param_node = $4;
         while (param_node) {
@@ -167,7 +195,7 @@ function_definition:
         if (found == -1) {
             // Si la función no está declarada, agregarla a la tabla de símbolos
             printf("Adding function: %s with %d parameters\n", $2, param_count);
-            add_symbol(&symbol_table, $2, $1, true, false, false, NULL, param_count);  // Agregar función a la tabla de símbolos
+            add_symbol(&symbol_table, $2, $1, true, false, false, $4, param_count, NULL, NULL, 0, NULL, 0);  // Agregar función a la tabla de símbolos
         } else {
             // Si la función ya está declarada, reportar un error
             yyerror("Function already declared");
@@ -203,7 +231,7 @@ parameter_declaration:
         printf("Creating parameter: type=%s, name=%s\n", $1, $2);
         // Añadir el parámetro a la tabla de símbolos
         if (find_symbol(&symbol_table, $2) == -1) {
-            add_symbol(&symbol_table, $2, $1, false, false, false, NULL, 0);  // Añadir parámetro a la tabla
+            add_symbol(&symbol_table, $2, $1, false, false, false, NULL, 0, NULL, NULL, 0, NULL, 0);  // Añadir parámetro a la tabla
             $$ = (ASTNode*)createDeclarationNode($1, $2, NULL);  // Crear nodo de parámetro sin inicialización
         } else {
             yyerror("Parameter already declared");
@@ -223,7 +251,7 @@ declaration:
         if (found == -1) {
             printf("Symbol not found, adding: %s\n", $2);
             // Si la variable no está declarada, agregarla a la tabla de símbolos
-            add_symbol(&symbol_table, $2, $1, false, false, false, NULL, 0);  // Agregar variable
+            add_symbol(&symbol_table, $2, $1, false, false, false, NULL, 0, NULL, NULL, 0, NULL, 0);  // Agregar variable
             $$ = (ASTNode*)createDeclarationNode($1, $2, NULL);  // Crear nodo de declaración sin inicialización
         } else {
             // Si la variable ya está declarada, reportar un error
@@ -232,13 +260,13 @@ declaration:
         }
     }
     | type IDENTIFIER '=' expression ';' {
-        printf("Creating declaration with initialization: type=%s, name=%s\n", $1, $2);
+	printf("Creating declaration with initialization: type=%s, name=%s\n", $1, $2);
         // Verificar si la variable ya está declarada
         int found = find_symbol(&symbol_table, $2);
         if (found == -1) {
             printf("Symbol not found, adding: %s\n", $2);
             // Si la variable no está declarada, agregarla a la tabla de símbolos
-            add_symbol(&symbol_table, $2, $1, false, false, false, NULL, 0);  // Agregar variable
+            add_symbol(&symbol_table, $2, $1, false, false, false, NULL, 0, NULL, NULL, 0, NULL, 0);  // Agregar variable
             $$ = (ASTNode*)createDeclarationNode($1, $2, $4);  // Crear nodo de declaración con inicialización
         } else {
             // Si la variable ya está declarada, reportar un error
@@ -247,7 +275,7 @@ declaration:
         }
     }
     |type IDENTIFIER ',' IDENTIFIER_LIST ';' {
-        printf("Creating declaration list: type=%s, name=%s\n", $1, $2);
+	printf("Creating declaration list: type=%s, name=%s\n", $1, $2);
         $$ = (ASTNode*)createDeclarationListNode($2, $4);  // Múltiples declaraciones
     }
 ;
@@ -265,11 +293,11 @@ IDENTIFIER_LIST:
 
 type:
     simple_type {
-        printf("Parsed simple_type: %s\n", $1);
+	printf("Parsed simple_type: %s\n", $1);
         $$ = $1; // Pasar directamente el valor del tipo
     }
     | user_type {
-        printf("Parsed user_type: %s\n", $1);
+	printf("Parsed user_type: %s\n", $1);
         $$ = $1; // Pasar el nombre del tipo de usuario
     }
 ;
@@ -344,7 +372,7 @@ statement:
         $$ = (ASTNode*)createBinaryOpNode(OP_ASSIGN,createVariableNode($1), $3);  // Crear nodo de asignación
     }
     | block {
-        $$ = $1;  // El bloque es una lista de sentencias
+	$$ = $1;  // El bloque es una lista de sentencias
     }
     | ';' {
         $$ = NULL; // Sentencia vacía
@@ -358,10 +386,10 @@ statement:
 ;
 
 print_arguments:
-    STRING_LITERAL {
+    STRING_LITERAL { 
         $$ = (ASTNode*)createLiteralNode($1, "string");  // Crear nodo de literal de cadena
     }
-    | expression {
+    | expression { 
         $$ = $1;  // El argumento es una expresión
     }
     | print_arguments ',' STRING_LITERAL {
@@ -372,9 +400,10 @@ print_arguments:
     }
 ;
 
+
 expression:
   INTEGER_LITERAL{
-        printf("Creating literal: %d\n", $1);
+	printf("Creating literal: %d\n", $1);
         char buffer[20];
         snprintf(buffer, sizeof(buffer), "%d", $1);  // Convierte el entero a cadena
         $$ = (ASTNode*)createLiteralNode(buffer, "int");
@@ -428,15 +457,18 @@ expression:
       $$ = (ASTNode*)createFunctionCallWithContextNode($1, $3);  // Nodo con contexto
   }
   | IDENTIFIER '(' argument_list ')'  /* Llamada a función */ {
-        if (strcmp($1, "subStr") == 0) {
-                printf("Creating subStr function call\n");
-                $$ = createFunctionCallNode($1, $3);  // Llamada a subStr con sus argumentos
+	if (strcmp($1, "subStr") == 0) {
+		printf("Creating subStr function call\n");
+        	$$ = createFunctionCallNode($1, $3);  // Llamada a subStr con sus argumentos
         } else {
-                printf("Creating general function call\n");
-                $$ = (ASTNode*)createFunctionCallNode($1, $3);  // Llamada a función en general
+		printf("Creating general function call\n");
+        	$$ = (ASTNode*)createFunctionCallNode($1, $3);  // Llamada a función en general
         }
   }
   | READ_INT '(' ')'  /* Leer entero */{
+	printf("Adding predefined function: readInt\n");
+        char* readIntParams[] = {NULL};  // Sin parámetros
+        add_symbol(&symbol_table, "readInt", "int", true, false, false, readIntParams, 0, NULL, NULL, 0, NULL, 0);
         $$ = (ASTNode*)createFunctionCallNode("readInt", NULL);  // Crear nodo para la llamada a readInt()
   }
   | READ_STRING '(' ')'  /* Leer string */ {

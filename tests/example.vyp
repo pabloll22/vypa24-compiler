@@ -1,0 +1,18 @@
+class A : Object{
+  int x = 2;
+  string y;
+  int add() { return x; }
+}
+
+class B : A {
+  int z = 2;
+}
+
+class C : B {
+	int w = 3444;
+}
+
+void main(){
+	return 0;
+}
+

@@ -83,6 +83,7 @@ typedef struct {
     char* name;                    // Nombre de la función
     char* returnType;              // Tipo de retorno
     ASTNode* parameters;           // Lista de parámetros
+    int param_count;
     ASTNode* body;                 // Cuerpo de la función
 } ASTFunctionNode;
 
