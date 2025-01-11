@@ -22,7 +22,7 @@ OBJS = parser.o lexer.o main.o ast.o symbol_table.o semantic_analysis.o
 
 # Main rule
 $(EXEC): $(OBJS)
-	$(CC) $(CFLAGS) -o $(EXEC) $(OBJS) -lfl
+	$(CC) $(CFLAGS) -o $(EXEC) $(OBJS)
 
 # Object for the parser
 parser.o: $(PARSER_GEN) $(PARSER_HEADER) $(SRC)/ast.h $(SRC)/symbol_table.h

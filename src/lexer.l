@@ -8,6 +8,7 @@
 
 
 %option debug
+%option noyywrap
 
 %%
 
