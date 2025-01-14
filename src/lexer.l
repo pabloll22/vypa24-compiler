@@ -4,6 +4,7 @@
 #include "parser.h"
 #include <stdio.h>
 #include <stdlib.h>
+int lexical_error = 0;
 %}
 
 
@@ -53,6 +54,6 @@
 "/*"([^*]|\*+[^*/])*"\*/" { /* Ignorar los comentarios en bloque */ }
 [ \t\n]          ; /* Ignorar espacios en blanco */
 "//".*           ; /* Ignorar comentarios de una línea */
-.                { fprintf(stderr, "Error léxico: '%s'\n", yytext); return yytext[0]; }
+.                { fprintf(stderr, "Lexical Error: '%s'\n", yytext); lexical_error = 1; return YYLEX_ERROR; }
 
 %%

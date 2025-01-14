@@ -11,6 +11,7 @@
 extern int yyparse();
 extern int yydebug;
 extern FILE* yyin;
+extern int lexical_error;
 //ASTNode* root = NULL;
 SymbolTable symbol_table;
 
@@ -206,7 +207,7 @@ void printAST(ASTNode* node, int indent) {
 int main(int argc, char** argv) {
     if (argc < 2) {
         fprintf(stderr, "Usage: %s <input_file>\n", argv[0]);
-        return EXIT_FAILURE;
+        return 19;
     }
 
     init_symbol_table(&symbol_table);
@@ -216,17 +217,24 @@ int main(int argc, char** argv) {
     FILE* inputFile = fopen(argv[1], "r");
     if (!inputFile) {
         perror("Error opening file");
-        return EXIT_FAILURE;
+        return 19;
     }
 
     yyin = inputFile;
 
-    // Parse the input file
-    if (yyparse() == 0) {
+    int parseResult = yyparse();
+    printf("LEXICAL_ERRORS %i\n", lexical_error);  // Asegúrate de que este mensaje siempre se ejecute
+
+    if (lexical_error) {
+        fprintf(stderr, "Error during lexical analysis.\n");
+        return 11;
+    }
+
+    if (parseResult != 0) {
+        fprintf(stderr, "Error during syntactic analysis.\n");
+        return 12;
+    }else{
         printf("Parsing completed successfully.\n");
-    } else {
-        printf("Parsing failed.\n");
-        return EXIT_FAILURE;
     }
 
     fclose(inputFile);
@@ -234,7 +242,7 @@ int main(int argc, char** argv) {
     // Check if the AST was constructed
     if (!root) {
         fprintf(stderr, "Error: AST root is NULL.\n");
-        return EXIT_FAILURE;
+        return 19;
     }
 
     // Print the AST
@@ -249,9 +257,9 @@ int main(int argc, char** argv) {
     printf("\nPerforming semantic analysis...\n");
     if (performSemanticAnalysis(root, &symbol_table) != 0) {
         fprintf(stderr, "Semantic analysis failed.\n");
-        return EXIT_FAILURE;
+        return 13;
     }
     printf("Semantic analysis completed successfully.\n");
 
-    return EXIT_SUCCESS;
+    return 0;
 }

@@ -25,6 +25,7 @@ ASTNode* root = NULL;
     ASTNode* astNode;
 }
 
+%token YYLEX_ERROR
 %token <sval> CLASS INT STRING VOID IDENTIFIER STRING_LITERAL
 %token <ival> INTEGER_LITERAL
 %token IF WHILE ELSE RETURN PRINT READ_INT READ_STRING
@@ -72,6 +73,7 @@ program:
     | class_definitions function_definitions {
         root = (ASTNode*)createProgramNode($1, $2);
     }
+    |error { YYABORT; }
 ;
 
 class_definitions:
@@ -348,7 +350,11 @@ declaration_or_statement:
 
 // Sentences
 statement:
-    IF '(' expression ')' block ELSE block {
+    YYLEX_ERROR {
+        fprintf(stderr, "Lexical error detected in parser.\n");
+        YYABORT;
+    }
+    |IF '(' expression ')' block ELSE block {
         $$ = (ASTNode*)createIfNode($3, $5, $7);  // Create 'if' node with the condition and blocks
     }
     | IF '(' expression ')' block {
